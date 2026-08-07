@@ -14,7 +14,11 @@
     sans-serif;
 }
 
+/* Sticky so the non-diagnostic notice stays on screen once pages scroll. */
 .research-disclaimer {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: #3d2914;
   border-bottom: 2px solid #c9852a;
   color: #ffe8c2;
