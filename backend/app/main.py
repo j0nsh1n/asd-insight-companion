@@ -23,6 +23,18 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(api_router, prefix="/api/v1")
+
+    @app.get("/")
+    def root() -> dict[str, str]:
+        """API root — the product UI is the Vite app (default :5173)."""
+        return {
+            "service": settings.app_name,
+            "version": settings.app_version,
+            "health": "/api/v1/health",
+            "ui": "http://localhost:5173",
+            "note": "Research-only prototype. Not a medical diagnosis.",
+        }
+
     return app
 
 

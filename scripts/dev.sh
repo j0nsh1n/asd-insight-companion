@@ -5,6 +5,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Load nvm when present (Node was installed via nvm on this machine).
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh"
+fi
+
 if [[ -f .env ]]; then
   set -a
   # shellcheck disable=SC1091
@@ -12,8 +19,13 @@ if [[ -f .env ]]; then
   set +a
 fi
 
-export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://localhost:8000}"
+export VITE_API_BASE_URL="${VITE_API_BASE_URL:-http://127.0.0.1:8000}"
 export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}"
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm not found. Install Node or load nvm: export NVM_DIR=\"\$HOME/.nvm\"; . \"\$NVM_DIR/nvm.sh\""
+  exit 1
+fi
 
 BACKEND_VENV="$ROOT/backend/.venv"
 if [[ ! -x "$BACKEND_VENV/bin/uvicorn" ]]; then
@@ -42,10 +54,26 @@ BACKEND_PID=$!
 echo "Starting frontend on http://127.0.0.1:5173 ..."
 (
   cd "$ROOT/frontend"
-  VITE_API_BASE_URL="$VITE_API_BASE_URL" npm run dev -- --host 127.0.0.1 --port 5173
+  VITE_API_BASE_URL="$VITE_API_BASE_URL" npm run dev
 ) &
 FRONTEND_PID=$!
 
+# Wait until frontend answers (or fail with a clear message).
+for _ in $(seq 1 30); do
+  if curl -sf -o /dev/null "http://127.0.0.1:5173/"; then
+    break
+  fi
+  sleep 0.2
+done
+
+if ! curl -sf -o /dev/null "http://127.0.0.1:5173/"; then
+  echo "Frontend did not become ready on http://127.0.0.1:5173"
+  exit 1
+fi
+
+echo ""
+echo "Open the UI:     http://127.0.0.1:5173"
+echo "API health:      http://127.0.0.1:8000/api/v1/health"
+echo "API root only:   http://127.0.0.1:8000/  (JSON, not the product UI)"
 echo "Backend PID=$BACKEND_PID  Frontend PID=$FRONTEND_PID"
-echo "Health: $VITE_API_BASE_URL/api/v1/health"
 wait
