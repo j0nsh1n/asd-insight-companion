@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 0 smoke: automated tests only (no long-lived servers).
+# Phase 0 smoke: automated checks only (no long-lived servers).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,10 +9,29 @@ if [[ -s "$NVM_DIR/nvm.sh" ]]; then
   . "$NVM_DIR/nvm.sh"
 fi
 
+echo "== Backend lint (ruff) =="
+(
+  cd "$ROOT/backend"
+  .venv/bin/ruff check .
+  .venv/bin/ruff format --check .
+)
+
+echo "== Backend types (mypy) =="
+(
+  cd "$ROOT/backend"
+  .venv/bin/mypy app
+)
+
 echo "== Backend pytest =="
 (
   cd "$ROOT/backend"
   .venv/bin/pytest -q
+)
+
+echo "== Frontend lint (oxlint) =="
+(
+  cd "$ROOT/frontend"
+  npm run lint
 )
 
 echo "== Frontend vitest =="
