@@ -1,0 +1,23 @@
+# Minimal local skeleton — not required for day-to-day Phase 0 work.
+# Prefer: ./scripts/dev.sh
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      CORS_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000

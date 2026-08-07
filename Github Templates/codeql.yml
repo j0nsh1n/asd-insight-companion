@@ -1,0 +1,26 @@
+# NOTE: if this repo uses a language NOT listed below (Go, Ruby, Java, C#, etc.),
+# append it to `languages`. CodeQL silently skips unlisted languages.
+name: CodeQL
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly Monday scan
+
+permissions:
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: python, javascript-typescript
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3

@@ -1,0 +1,49 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Python: runs only if Python project files exist ---
+      - uses: actions/setup-python@v5
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        with:
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Install Python deps
+        if: hashFiles('requirements.txt') != ''
+        run: pip install -r requirements.txt ruff pytest pyright
+
+      - name: Python lint + types + tests
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        run: |
+          ruff check .
+          pyright
+          if [ -d tests ]; then pytest -q; fi
+
+      # --- Node: runs only if package.json exists ---
+      - uses: actions/setup-node@v4
+        if: hashFiles('package.json') != ''
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Node lint + test
+        if: hashFiles('package.json') != ''
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm test --if-present
+
+      # --- Markdown: always runs, never blocks ---
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: "**/*.md"
+        continue-on-error: true
