@@ -21,6 +21,7 @@ backend/.venv/
 htmlcov/
 *.sqlite3
 *.db
+backend/data/
 
 # Node / Vite
 node_modules/

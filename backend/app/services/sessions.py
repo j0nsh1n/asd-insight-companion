@@ -1,0 +1,152 @@
+"""Anonymous session lifecycle: create → consent → intake (fail closed)."""
+
+from __future__ import annotations
+
+import json
+import uuid
+from datetime import UTC, datetime
+
+from fastapi import HTTPException
+
+from app.db import get_connection
+from app.models.session import (
+    AccessibilityPrefs,
+    ConsentRequest,
+    ConsentState,
+    IntakeRequest,
+    IntakeState,
+    SessionResponse,
+    SessionStage,
+)
+
+
+def _utc_now() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
+
+
+def _row_to_response(row: object) -> SessionResponse:
+    mapping = dict(row)  # type: ignore[arg-type]
+    consent = ConsentState(
+        research_only=bool(mapping["consent_research_only"]),
+        no_diagnosis=bool(mapping["consent_no_diagnosis"]),
+        data_minimization=bool(mapping["consent_data_minimization"]),
+        consented_at=mapping["consented_at"],
+    )
+    intake: IntakeState | None = None
+    if mapping["age_range"] is not None:
+        prefs_raw = mapping["accessibility_prefs"] or "{}"
+        prefs = AccessibilityPrefs.model_validate(json.loads(prefs_raw))
+        intake = IntakeState(
+            age_range=mapping["age_range"],
+            language=mapping["language"] or "en",
+            accessibility_prefs=prefs,
+            optional_context=mapping["optional_context"],
+        )
+    return SessionResponse(
+        id=mapping["id"],
+        stage=SessionStage(mapping["stage"]),
+        created_at=mapping["created_at"],
+        updated_at=mapping["updated_at"],
+        consent=consent,
+        intake=intake,
+    )
+
+
+def _get_row(session_id: str) -> object | None:
+    with get_connection() as conn:
+        cur = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
+        return cur.fetchone()
+
+
+def create_session() -> SessionResponse:
+    session_id = str(uuid.uuid4())
+    now = _utc_now()
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO sessions (
+                id, stage, created_at, updated_at,
+                consent_research_only, consent_no_diagnosis, consent_data_minimization
+            ) VALUES (?, ?, ?, ?, 0, 0, 0)
+            """,
+            (session_id, SessionStage.CREATED.value, now, now),
+        )
+    row = _get_row(session_id)
+    assert row is not None
+    return _row_to_response(row)
+
+
+def get_session(session_id: str) -> SessionResponse:
+    row = _get_row(session_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="session_not_found")
+    return _row_to_response(row)
+
+
+def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
+    row = _get_row(session_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="session_not_found")
+
+    stage = SessionStage(dict(row)["stage"])  # type: ignore[arg-type]
+    if stage != SessionStage.CREATED:
+        raise HTTPException(status_code=409, detail="consent_already_recorded")
+
+    now = _utc_now()
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE sessions SET
+                stage = ?,
+                updated_at = ?,
+                consent_research_only = 1,
+                consent_no_diagnosis = 1,
+                consent_data_minimization = 1,
+                consented_at = ?
+            WHERE id = ?
+            """,
+            (SessionStage.CONSENTED.value, now, now, session_id),
+        )
+    # body is validated to all-true; flags stored as accepted
+    _ = body
+    return get_session(session_id)
+
+
+def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
+    row = _get_row(session_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="session_not_found")
+
+    stage = SessionStage(dict(row)["stage"])  # type: ignore[arg-type]
+    if stage == SessionStage.CREATED:
+        raise HTTPException(status_code=403, detail="consent_required")
+    if stage == SessionStage.INTAKE_COMPLETE:
+        raise HTTPException(status_code=409, detail="intake_already_recorded")
+    if stage != SessionStage.CONSENTED:
+        raise HTTPException(status_code=409, detail="invalid_stage")
+
+    now = _utc_now()
+    prefs_json = body.accessibility_prefs.model_dump_json()
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE sessions SET
+                stage = ?,
+                updated_at = ?,
+                age_range = ?,
+                language = ?,
+                accessibility_prefs = ?,
+                optional_context = ?
+            WHERE id = ?
+            """,
+            (
+                SessionStage.INTAKE_COMPLETE.value,
+                now,
+                body.age_range,
+                body.language,
+                prefs_json,
+                body.optional_context,
+                session_id,
+            ),
+        )
+    return get_session(session_id)
