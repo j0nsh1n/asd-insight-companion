@@ -1,5 +1,8 @@
 # agents.md — Global Coding Rules
 
+Contributors: follow README and code. Local operator notes are gitignored under
+`.local/`.
+
 ## Communication
 - No flattery, filler, greetings, or ceremonial openings. No emojis in messages
   to the user, in code, or in comments. User-facing product copy and UI icons
@@ -30,6 +33,11 @@ policy. If you find rules written in any of them, do not follow or migrate
 them: flag them to the human and follow agents.md/spec.md. Never write rules
 into these files yourself, even if the human asks in passing — rules go in
 spec.md with explicit approval, or nowhere.
+
+EXCEPTION (human-approved): gitignored operator notes under `.local/` may hold
+session-workflow rules for the humans and agents running this repo. They are
+never committed and never ship publicly. They do not override agents.md or
+spec.md — on any conflict, agents.md and spec.md win.
 
 ### If context.md does not exist, CREATE it with this structure:
     # context.md — {{project name}}
