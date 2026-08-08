@@ -19,6 +19,15 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
   const [dataMinimization, setDataMinimization] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
 
+  const allAccepted = researchOnly && noDiagnosis && dataMinimization
+
+  const setAll = (checked: boolean) => {
+    setResearchOnly(checked)
+    setNoDiagnosis(checked)
+    setDataMinimization(checked)
+    if (checked) setLocalError(null)
+  }
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (!researchOnly || !noDiagnosis || !dataMinimization) {
@@ -43,6 +52,17 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
         This tool never diagnoses autism.
       </p>
       <form onSubmit={handleSubmit} className="form-stack">
+        <label className="check-row check-row-all">
+          <input
+            type="checkbox"
+            checked={allAccepted}
+            aria-label="Agree to all consent statements"
+            onChange={(e) => setAll(e.target.checked)}
+          />
+          <span>
+            <strong>Agree to all</strong> consent statements below
+          </span>
+        </label>
         <label className="check-row">
           <input
             type="checkbox"

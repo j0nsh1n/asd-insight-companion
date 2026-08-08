@@ -28,8 +28,9 @@ describe('Consent', () => {
     )
 
     const boxes = screen.getAllByRole('checkbox')
-    expect(boxes).toHaveLength(3)
-    for (const box of boxes) {
+    // agree-to-all + three statements
+    expect(boxes).toHaveLength(4)
+    for (const box of boxes.slice(1)) {
       await user.click(box)
     }
     await user.click(
@@ -40,5 +41,45 @@ describe('Consent', () => {
       no_diagnosis: true,
       data_minimization: true,
     })
+  })
+
+  it('agree to all checks every statement and allows submit', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(
+      <Consent busy={false} error={null} onSubmit={onSubmit} onBack={vi.fn()} />,
+    )
+
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /agree to all consent statements/i,
+      }),
+    )
+    const boxes = screen.getAllByRole('checkbox')
+    expect(boxes.every((b) => (b as HTMLInputElement).checked)).toBe(true)
+
+    await user.click(
+      screen.getByRole('button', { name: /accept and continue/i }),
+    )
+    expect(onSubmit).toHaveBeenCalledWith({
+      research_only: true,
+      no_diagnosis: true,
+      data_minimization: true,
+    })
+  })
+
+  it('unchecking agree to all clears every statement', async () => {
+    const user = userEvent.setup()
+    render(
+      <Consent busy={false} error={null} onSubmit={vi.fn()} onBack={vi.fn()} />,
+    )
+
+    const agreeAll = screen.getByRole('checkbox', {
+      name: /agree to all consent statements/i,
+    })
+    await user.click(agreeAll)
+    await user.click(agreeAll)
+    const boxes = screen.getAllByRole('checkbox')
+    expect(boxes.every((b) => !(b as HTMLInputElement).checked)).toBe(true)
   })
 })
