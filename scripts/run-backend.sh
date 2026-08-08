@@ -23,6 +23,32 @@ fi
 
 export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}"
 
+# If something already answers our health endpoint, do not start a second server.
+if curl -sf "http://${HOST}:${PORT}/api/v1/health" >/dev/null 2>&1; then
+  echo "Backend already running on http://${HOST}:${PORT}"
+  curl -sS "http://${HOST}:${PORT}/api/v1/health"
+  echo ""
+  echo "UI: http://127.0.0.1:5173"
+  echo "To restart:  fuser -k ${PORT}/tcp   then re-run this script"
+  exit 0
+fi
+
+# Port taken by something else (or a hung process without healthy API).
+if ss -tln 2>/dev/null | grep -qE ":${PORT}\\b" || \
+   fuser "${PORT}/tcp" >/dev/null 2>&1; then
+  echo "ERROR: port ${PORT} is already in use, but health check failed."
+  echo "Who is using it:"
+  ss -tlnp 2>/dev/null | grep -E ":${PORT}\\b" || true
+  fuser -v "${PORT}/tcp" 2>&1 || true
+  echo ""
+  echo "Free the port, then retry:"
+  echo "  fuser -k ${PORT}/tcp"
+  echo "  ./scripts/run-backend.sh"
+  echo "Or use another port:"
+  echo "  PORT=8001 ./scripts/run-backend.sh"
+  exit 1
+fi
+
 cd "$BACKEND"
 echo "Backend dir: $BACKEND"
 echo "SQLite:      ${SQLITE_PATH:-$BACKEND/data/app.db}"
