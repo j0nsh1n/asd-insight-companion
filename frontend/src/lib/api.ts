@@ -24,6 +24,7 @@ export type QuestionnaireSummary = {
   completed_at: string | null
   score: number | null
   item_count: number | null
+  bank_id: string | null
   timing: {
     item_count: number
     total_time_ms: number

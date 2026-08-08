@@ -100,11 +100,6 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
     scale = get_scale_values()
     if body.answer_value not in scale:
         raise HTTPException(status_code=422, detail="invalid_answer_value")
-    if body.total_time_on_question_ms < body.time_to_first_interaction_ms:
-        raise HTTPException(
-            status_code=422,
-            detail="total_time_on_question_ms must be >= time_to_first_interaction_ms",
-        )
 
     now = _utc_now()
     with get_connection() as conn:
@@ -112,6 +107,7 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
         stage = SessionStage(str(row["stage"]))
         _assert_questionnaire_writable(stage)
 
+        # Single atomic stage flip on first answer (no redundant second UPDATE).
         if stage == SessionStage.INTAKE_COMPLETE:
             cur = conn.execute(
                 """
@@ -130,7 +126,7 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
                 ),
             )
             if cur.rowcount != 1:
-                # Concurrent start or race — re-check
+                # Concurrent start won the flip — re-check writable stage.
                 row = _require_session_row(conn, body.session_id)
                 stage = SessionStage(str(row["stage"]))
                 _assert_questionnaire_writable(stage)
@@ -163,27 +159,11 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
                 now,
             ),
         )
-        if stage == SessionStage.INTAKE_COMPLETE:
-            # ensure stage flip if concurrent path skipped
-            conn.execute(
-                """
-                UPDATE sessions SET stage = ?, updated_at = ?,
-                    questionnaire_started_at = COALESCE(questionnaire_started_at, ?)
-                WHERE id = ? AND stage = ?
-                """,
-                (
-                    SessionStage.QUESTIONNAIRE_IN_PROGRESS.value,
-                    now,
-                    now,
-                    body.session_id,
-                    SessionStage.INTAKE_COMPLETE.value,
-                ),
-            )
-        else:
-            conn.execute(
-                "UPDATE sessions SET updated_at = ? WHERE id = ?",
-                (now, body.session_id),
-            )
+        # Keep session.updated_at current for every answer (including post-start).
+        conn.execute(
+            "UPDATE sessions SET updated_at = ? WHERE id = ?",
+            (now, body.session_id),
+        )
 
         answered = _load_responses(conn, body.session_id)
         ordered = [item.id for item in bank.items]
@@ -294,6 +274,7 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
                 questionnaire_score = ?,
                 questionnaire_item_count = ?,
                 questionnaire_timing_summary = ?,
+                questionnaire_bank_id = ?,
                 questionnaire_started_at = COALESCE(questionnaire_started_at, ?)
             WHERE id = ? AND stage IN (?, ?)
             """,
@@ -304,6 +285,7 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
                 score,
                 n,
                 timing_json,
+                bank.bank_id,
                 now,
                 body.session_id,
                 SessionStage.INTAKE_COMPLETE.value,

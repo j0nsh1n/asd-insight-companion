@@ -144,6 +144,39 @@ describe('App Phase 1 flow', () => {
     })
   })
 
+  it('applies large_text accessibility class from intake prefs', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(
+      baseSession('consented', {
+        intake: {
+          age_range: '25-34',
+          language: 'en',
+          accessibility_prefs: {
+            large_text: true,
+            reduced_motion: true,
+            screen_reader_hints: true,
+          },
+          optional_context: null,
+        },
+      }),
+    )
+
+    const { container } = render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /^intake$/i }),
+      ).toBeInTheDocument()
+    })
+    const shell = container.querySelector('.app-shell')
+    expect(shell).toHaveClass('a11y-large-text')
+    expect(shell).toHaveClass('a11y-reduced-motion')
+    expect(shell).toHaveClass('a11y-screen-reader-hints')
+  })
+
   it('keeps prior session id when start fails', async () => {
     const user = userEvent.setup()
     const prior = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'

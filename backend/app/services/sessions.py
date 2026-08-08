@@ -42,8 +42,9 @@ def questionnaire_summary_from_mapping(
     completed = mapping.get("questionnaire_completed_at")
     score = mapping.get("questionnaire_score")
     item_count = mapping.get("questionnaire_item_count")
+    bank_id = mapping.get("questionnaire_bank_id")
     timing_raw = mapping.get("questionnaire_timing_summary")
-    if not any([started, completed, score is not None, timing_raw]):
+    if not any([started, completed, score is not None, timing_raw, bank_id]):
         return None
     timing = None
     if timing_raw:
@@ -53,6 +54,7 @@ def questionnaire_summary_from_mapping(
         completed_at=cast(str | None, completed),
         score=int(score) if score is not None else None,
         item_count=int(item_count) if item_count is not None else None,
+        bank_id=cast(str | None, bank_id),
         timing=timing,
     )
 

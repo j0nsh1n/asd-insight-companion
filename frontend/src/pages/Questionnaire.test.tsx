@@ -104,6 +104,35 @@ describe('Questionnaire', () => {
     })
   })
 
+  it('associates scale group with question text', async () => {
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'intake_complete',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 0,
+      answered: {},
+      next_question_id: 'ri_01',
+      ordered_question_ids: ['ri_01', 'ri_02'],
+      session: baseSession('intake_complete'),
+    })
+
+    render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={baseSession('intake_complete')}
+        onSessionUpdate={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await screen.findByText(/first research-inspired item/i)
+    const group = screen.getByRole('group', {
+      name: /first research-inspired item/i,
+    })
+    expect(group).toBeInTheDocument()
+  })
+
   it('posts metrics and advances on next', async () => {
     const user = userEvent.setup()
     const onSessionUpdate = vi.fn()

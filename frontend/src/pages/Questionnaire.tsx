@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   QuestionBank,
   QuestionItem,
@@ -172,10 +172,7 @@ export function Questionnaire({
     }
   }
 
-  const answeredCount = useMemo(
-    () => Object.keys(answered).length,
-    [answered],
-  )
+  const answeredCount = Object.keys(answered).length
 
   if (loading) {
     return (
@@ -187,29 +184,17 @@ export function Questionnaire({
   }
 
   if (isComplete) {
-    const q = session.questionnaire
     return (
       <section className="panel" aria-labelledby="q-done-title">
         <h2 id="q-done-title">Questionnaire complete</h2>
-        <p className="status-ok">Your responses were saved for this session.</p>
-        <p className="muted">
-          This is a research prototype only. Scores are for research logging,
-          not a medical diagnosis or clinical screening result.
+        <p className="status-ok">
+          The questionnaire portion of this research session is complete. Your
+          responses were saved.
         </p>
-        {q && (
-          <ul className="summary-list">
-            <li>Items answered: {q.item_count ?? answeredCount}</li>
-            <li>
-              Research log score (non-diagnostic): {q.score ?? '—'}
-            </li>
-            {q.timing && (
-              <li>
-                Total time on items: {q.timing.total_time_ms} ms · mean time{' '}
-                {q.timing.mean_total_time_on_question_ms} ms
-              </li>
-            )}
-          </ul>
-        )}
+        <p className="muted">
+          This is a research prototype only. It does not diagnose autism or any
+          medical condition, and results are not clinical advice.
+        </p>
         <div className="button-row">
           <button type="button" className="btn" onClick={onBack}>
             Back to welcome
@@ -256,9 +241,15 @@ export function Questionnaire({
         </div>
       </div>
 
-      <p className="question-text">{current.text}</p>
+      <p className="question-text" id={`question-text-${current.id}`}>
+        {current.text}
+      </p>
 
-      <div className="scale-options" role="group" aria-label="Response scale">
+      <div
+        className="scale-options"
+        role="group"
+        aria-labelledby={`question-text-${current.id}`}
+      >
         {scale.map((opt) => (
           <button
             key={opt.value}

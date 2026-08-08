@@ -14,6 +14,41 @@
     sans-serif;
 }
 
+/* Intake accessibility preferences (applied from session). */
+.app-shell.a11y-large-text {
+  font-size: 112.5%;
+}
+
+.app-shell.a11y-large-text .app-main h1 {
+  font-size: 2rem;
+}
+
+.app-shell.a11y-large-text .question-text {
+  font-size: 1.2rem;
+}
+
+.app-shell.a11y-reduced-motion .progress-fill {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Sticky so the non-diagnostic notice stays on screen once pages scroll. */
 .research-disclaimer {
   position: sticky;

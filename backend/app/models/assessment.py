@@ -2,9 +2,25 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.session import SessionResponse, SessionStage
+
+# Cap per-item dwell time (1 hour).
+MAX_ITEM_DURATION_MS = 3_600_000
+
+
+def _parse_iso_datetime(value: str, field_name: str) -> datetime:
+    """Parse ISO-8601 timestamps; accept trailing Z as UTC."""
+    cleaned = value.strip()
+    if cleaned.endswith("Z"):
+        cleaned = cleaned[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(cleaned)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a valid ISO-8601 datetime") from exc
 
 
 class ScaleOption(BaseModel):
@@ -38,16 +54,50 @@ class QuestionResponseRequest(BaseModel):
     shown_at: str = Field(min_length=1)
     answered_at: str = Field(min_length=1)
     time_to_first_interaction_ms: int = Field(ge=0)
-    total_time_on_question_ms: int = Field(ge=0)
+    total_time_on_question_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
     answer_change_count: int = Field(ge=0)
 
-    @field_validator("session_id", "question_id", "shown_at", "answered_at")
+    @field_validator("session_id", "question_id")
     @classmethod
-    def strip_required(cls, value: str) -> str:
+    def strip_ids(cls, value: str) -> str:
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("field must not be empty")
         return cleaned
+
+    @field_validator("shown_at")
+    @classmethod
+    def validate_shown_at(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("shown_at must not be empty")
+        _parse_iso_datetime(cleaned, "shown_at")
+        return cleaned
+
+    @field_validator("answered_at")
+    @classmethod
+    def validate_answered_at(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("answered_at must not be empty")
+        _parse_iso_datetime(cleaned, "answered_at")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_timing_order_and_bounds(self) -> QuestionResponseRequest:
+        shown = _parse_iso_datetime(self.shown_at, "shown_at")
+        answered = _parse_iso_datetime(self.answered_at, "answered_at")
+        if answered < shown:
+            raise ValueError("answered_at must be greater than or equal to shown_at")
+        if self.total_time_on_question_ms < self.time_to_first_interaction_ms:
+            raise ValueError(
+                "total_time_on_question_ms must be >= time_to_first_interaction_ms"
+            )
+        if self.total_time_on_question_ms > MAX_ITEM_DURATION_MS:
+            raise ValueError(
+                f"total_time_on_question_ms must be <= {MAX_ITEM_DURATION_MS}"
+            )
+        return self
 
 
 class StoredQuestionResponse(BaseModel):

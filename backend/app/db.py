@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     questionnaire_completed_at TEXT,
     questionnaire_score INTEGER,
     questionnaire_item_count INTEGER,
-    questionnaire_timing_summary TEXT
+    questionnaire_timing_summary TEXT,
+    questionnaire_bank_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS question_responses (
@@ -52,6 +53,7 @@ _SESSION_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("questionnaire_score", "INTEGER"),
     ("questionnaire_item_count", "INTEGER"),
     ("questionnaire_timing_summary", "TEXT"),
+    ("questionnaire_bank_id", "TEXT"),
 )
 
 # Wait for locks under concurrent writers.

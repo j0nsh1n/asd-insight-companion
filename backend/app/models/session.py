@@ -118,6 +118,7 @@ class QuestionnaireSummary(BaseModel):
     completed_at: str | None = None
     score: int | None = None
     item_count: int | None = None
+    bank_id: str | None = None
     timing: QuestionnaireTimingSummary | None = None
 
 

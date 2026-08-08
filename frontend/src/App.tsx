@@ -142,10 +142,31 @@ function App() {
     }
   }
 
+  const prefs = session?.intake?.accessibility_prefs
+  const shellClasses = [
+    'app-shell',
+    prefs?.large_text ? 'a11y-large-text' : '',
+    prefs?.reduced_motion ? 'a11y-reduced-motion' : '',
+    prefs?.screen_reader_hints ? 'a11y-screen-reader-hints' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className="app-shell">
+    <div className={shellClasses}>
       <ResearchDisclaimer />
-      <main className="app-main">
+      <main
+        className="app-main"
+        {...(prefs?.screen_reader_hints
+          ? { 'aria-describedby': 'a11y-hints-note' }
+          : {})}
+      >
+        {prefs?.screen_reader_hints && (
+          <p id="a11y-hints-note" className="sr-only">
+            Screen reader hints are enabled for this session. Progress and
+            errors are announced when they change.
+          </p>
+        )}
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
