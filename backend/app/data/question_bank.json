@@ -1,0 +1,72 @@
+{
+  "bank_id": "research-inspired-v1",
+  "label": "Research-inspired self-report items (not an official AQ or diagnostic instrument)",
+  "scale": [
+    { "value": 1, "label": "Definitely disagree" },
+    { "value": 2, "label": "Slightly disagree" },
+    { "value": 3, "label": "Slightly agree" },
+    { "value": 4, "label": "Definitely agree" }
+  ],
+  "items": [
+    {
+      "id": "ri_01",
+      "text": "I prefer clear, predictable routines over spontaneous plans.",
+      "required": true,
+      "reverse_scored": false
+    },
+    {
+      "id": "ri_02",
+      "text": "I find it easy to read social cues in group conversations.",
+      "required": true,
+      "reverse_scored": true
+    },
+    {
+      "id": "ri_03",
+      "text": "I notice small details that others often miss.",
+      "required": true,
+      "reverse_scored": false
+    },
+    {
+      "id": "ri_04",
+      "text": "I enjoy chatting about a wide range of everyday topics.",
+      "required": true,
+      "reverse_scored": true
+    },
+    {
+      "id": "ri_05",
+      "text": "Loud or busy environments can feel overwhelming for me.",
+      "required": true,
+      "reverse_scored": false
+    },
+    {
+      "id": "ri_06",
+      "text": "I usually know how to keep a conversation going with someone new.",
+      "required": true,
+      "reverse_scored": true
+    },
+    {
+      "id": "ri_07",
+      "text": "I can become deeply focused on topics that interest me.",
+      "required": true,
+      "reverse_scored": false
+    },
+    {
+      "id": "ri_08",
+      "text": "I find it easy to understand figurative language and jokes.",
+      "required": true,
+      "reverse_scored": true
+    },
+    {
+      "id": "ri_09",
+      "text": "I prefer written instructions when learning something new.",
+      "required": true,
+      "reverse_scored": false
+    },
+    {
+      "id": "ri_10",
+      "text": "I find social small talk mostly easy and natural.",
+      "required": true,
+      "reverse_scored": true
+    }
+  ]
+}

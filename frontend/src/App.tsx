@@ -9,6 +9,7 @@ import {
   postIntake,
   type IntakePayload,
   type SessionResponse,
+  type SessionStage,
 } from './lib/api'
 import {
   clearSessionId,
@@ -17,15 +18,24 @@ import {
 } from './lib/sessionStorage'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
+import { Questionnaire } from './pages/Questionnaire'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
-type View = 'welcome' | 'consent' | 'intake'
+type View = 'welcome' | 'consent' | 'intake' | 'questionnaire'
 type BackendLabel = 'checking…' | 'ok' | 'error'
 
-function stageToView(stage: SessionResponse['stage']): View {
+function stageToView(stage: SessionStage): View {
   if (stage === 'created') return 'consent'
-  return 'intake'
+  if (stage === 'consented') return 'intake'
+  if (
+    stage === 'intake_complete' ||
+    stage === 'questionnaire_in_progress' ||
+    stage === 'questionnaire_complete'
+  ) {
+    return 'questionnaire'
+  }
+  return 'welcome'
 }
 
 function App() {
@@ -60,7 +70,6 @@ function App() {
   }, [])
 
   const showWelcome = useCallback(() => {
-    // Cannot undo consent server-side; welcome is navigation only.
     setView('welcome')
     setError(null)
   }, [])
@@ -69,7 +78,6 @@ function App() {
     setBusy(true)
     setError(null)
     try {
-      // Keep any prior session id until create succeeds (resume safety).
       const created = await createSession()
       applySession(created)
     } catch (err) {
@@ -141,8 +149,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 1: consent &
-            intake)
+            Research-only ASD-trait prescreen prototype (Phase 2: timed
+            questionnaire)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -175,17 +183,17 @@ function App() {
           <Intake
             busy={busy}
             error={error}
-            readOnlySummary={
-              session.stage === 'intake_complete' && session.intake
-                ? {
-                    age_range: session.intake.age_range,
-                    language: session.intake.language,
-                    accessibility_prefs: session.intake.accessibility_prefs,
-                    optional_context: session.intake.optional_context,
-                  }
-                : null
-            }
+            readOnlySummary={null}
             onSubmit={(p) => void handleIntake(p)}
+            onBack={showWelcome}
+          />
+        )}
+
+        {view === 'questionnaire' && session && (
+          <Questionnaire
+            sessionId={session.id}
+            initialSession={session}
+            onSessionUpdate={applySession}
             onBack={showWelcome}
           />
         )}

@@ -213,3 +213,73 @@
   line-height: 1.5;
   color: #c5d0db;
 }
+
+.bank-label {
+  font-style: italic;
+}
+
+.progress-block {
+  margin: 1rem 0 1.25rem;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #9aa7b5;
+  margin-bottom: 0.4rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #0f1419;
+  border: 1px solid #2a3542;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3d7ab5;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.question-text {
+  font-size: 1.05rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.scale-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scale-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.scale-btn.selected {
+  border-color: #5aa0e0;
+  background: #1e3a55;
+}
+
+.scale-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  font-weight: 700;
+  color: #9ec9f0;
+}
+
+.scale-label {
+  font-weight: 500;
+}

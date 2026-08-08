@@ -1,0 +1,166 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as api from '../lib/api'
+import { Questionnaire } from './Questionnaire'
+
+vi.mock('../lib/api', async () => {
+  const actual = await vi.importActual<typeof import('../lib/api')>('../lib/api')
+  return {
+    ...actual,
+    fetchQuestionBank: vi.fn(),
+    fetchQuestionnaireProgress: vi.fn(),
+    postQuestionResponse: vi.fn(),
+    postQuestionnaireComplete: vi.fn(),
+  }
+})
+
+const bank: api.QuestionBank = {
+  bank_id: 'research-inspired-v1',
+  label: 'Research-inspired self-report items (not an official AQ)',
+  scale: [
+    { value: 1, label: 'Definitely disagree' },
+    { value: 2, label: 'Slightly disagree' },
+    { value: 3, label: 'Slightly agree' },
+    { value: 4, label: 'Definitely agree' },
+  ],
+  required_count: 2,
+  items: [
+    {
+      id: 'ri_01',
+      text: 'First research-inspired item.',
+      required: true,
+      reverse_scored: false,
+    },
+    {
+      id: 'ri_02',
+      text: 'Second research-inspired item.',
+      required: true,
+      reverse_scored: true,
+    },
+  ],
+}
+
+const baseSession = (stage: api.SessionStage): api.SessionResponse => ({
+  id: 'sess-1',
+  stage,
+  created_at: '2026-01-01T00:00:00+00:00',
+  updated_at: '2026-01-01T00:00:00+00:00',
+  consent: {
+    research_only: true,
+    no_diagnosis: true,
+    data_minimization: true,
+    consented_at: '2026-01-01T00:01:00+00:00',
+  },
+  intake: {
+    age_range: '25-34',
+    language: 'en',
+    accessibility_prefs: {
+      large_text: false,
+      reduced_motion: false,
+      screen_reader_hints: false,
+    },
+    optional_context: null,
+  },
+  questionnaire: null,
+})
+
+describe('Questionnaire', () => {
+  beforeEach(() => {
+    vi.mocked(api.fetchQuestionBank).mockReset()
+    vi.mocked(api.fetchQuestionnaireProgress).mockReset()
+    vi.mocked(api.postQuestionResponse).mockReset()
+    vi.mocked(api.postQuestionnaireComplete).mockReset()
+    vi.mocked(api.fetchQuestionBank).mockResolvedValue(bank)
+  })
+
+  it('shows research-inspired label and first question', async () => {
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'intake_complete',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 0,
+      answered: {},
+      next_question_id: 'ri_01',
+      ordered_question_ids: ['ri_01', 'ri_02'],
+      session: baseSession('intake_complete'),
+    })
+
+    render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={baseSession('intake_complete')}
+        onSessionUpdate={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/not an official aq/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/first research-inspired item/i),
+      ).toBeInTheDocument()
+    })
+  })
+
+  it('posts metrics and advances on next', async () => {
+    const user = userEvent.setup()
+    const onSessionUpdate = vi.fn()
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'intake_complete',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 0,
+      answered: {},
+      next_question_id: 'ri_01',
+      ordered_question_ids: ['ri_01', 'ri_02'],
+      session: baseSession('intake_complete'),
+    })
+    vi.mocked(api.postQuestionResponse).mockResolvedValue({
+      session: baseSession('questionnaire_in_progress'),
+      response: {
+        question_id: 'ri_01',
+        answer_value: 3,
+        shown_at: 't0',
+        answered_at: 't1',
+        time_to_first_interaction_ms: 10,
+        total_time_on_question_ms: 100,
+        answer_change_count: 0,
+      },
+      answered_count: 1,
+      required_count: 2,
+      next_question_id: 'ri_02',
+    })
+
+    render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={baseSession('intake_complete')}
+        onSessionUpdate={onSessionUpdate}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await screen.findByText(/first research-inspired item/i)
+    await user.click(screen.getByRole('button', { name: /slightly agree/i }))
+    await user.click(screen.getByRole('button', { name: /^next$/i }))
+
+    await waitFor(() => {
+      expect(api.postQuestionResponse).toHaveBeenCalled()
+    })
+    const payload = vi.mocked(api.postQuestionResponse).mock.calls[0][0]
+    expect(payload.question_id).toBe('ri_01')
+    expect(payload.answer_value).toBe(3)
+    expect(payload.time_to_first_interaction_ms).toBeGreaterThanOrEqual(0)
+    expect(payload.total_time_on_question_ms).toBeGreaterThanOrEqual(
+      payload.time_to_first_interaction_ms,
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByText(/second research-inspired item/i),
+      ).toBeInTheDocument()
+    })
+  })
+})

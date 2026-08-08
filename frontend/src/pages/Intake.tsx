@@ -57,9 +57,8 @@ export function Intake({
           </li>
         </ul>
         <p className="muted">
-          Later assessment steps are not available in this phase. You may close
-          this tab; your session id is kept in browser session storage for
-          refresh/resume.
+          When you continue, the next step is a timed research-inspired
+          questionnaire (not an official diagnostic instrument).
         </p>
       </section>
     )
