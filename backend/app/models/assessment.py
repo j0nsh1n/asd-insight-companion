@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -13,14 +13,21 @@ MAX_ITEM_DURATION_MS = 3_600_000
 
 
 def _parse_iso_datetime(value: str, field_name: str) -> datetime:
-    """Parse ISO-8601 timestamps; accept trailing Z as UTC."""
+    """Parse ISO-8601 timestamps; accept trailing Z as UTC.
+
+    Naive datetimes are treated as UTC so mixed naive/aware comparisons
+    never raise TypeError (which would escape as HTTP 500).
+    """
     cleaned = value.strip()
     if cleaned.endswith("Z"):
         cleaned = cleaned[:-1] + "+00:00"
     try:
-        return datetime.fromisoformat(cleaned)
+        parsed = datetime.fromisoformat(cleaned)
     except ValueError as exc:
         raise ValueError(f"{field_name} must be a valid ISO-8601 datetime") from exc
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed
 
 
 class ScaleOption(BaseModel):

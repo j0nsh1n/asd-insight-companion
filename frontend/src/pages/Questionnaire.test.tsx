@@ -104,6 +104,49 @@ describe('Questionnaire', () => {
     })
   })
 
+  it('completion UI hides numeric score and the word score', async () => {
+    const completed = baseSession('questionnaire_complete')
+    completed.questionnaire = {
+      started_at: '2026-01-01T00:02:00+00:00',
+      completed_at: '2026-01-01T00:10:00+00:00',
+      score: 42,
+      item_count: 10,
+      bank_id: 'research-inspired-v1',
+      timing: {
+        item_count: 10,
+        total_time_ms: 1000,
+        mean_time_to_first_interaction_ms: 100,
+        mean_total_time_on_question_ms: 100,
+        total_answer_changes: 0,
+      },
+    }
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'questionnaire_complete',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 2,
+      answered: {},
+      next_question_id: null,
+      ordered_question_ids: ['ri_01', 'ri_02'],
+      session: completed,
+    })
+
+    const { container } = render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={completed}
+        onSessionUpdate={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await screen.findByRole('heading', { name: /questionnaire complete/i })
+    const text = container.textContent ?? ''
+    expect(text).not.toMatch(/\b42\b/)
+    expect(text.toLowerCase()).not.toContain('score')
+  })
+
   it('associates scale group with question text', async () => {
     vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
       session_id: 'sess-1',

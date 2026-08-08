@@ -200,6 +200,54 @@ def test_rejects_reversed_timestamps(client: TestClient) -> None:
     assert "answered_at" in response.text
 
 
+def test_mixed_tz_naive_shown_aware_answered_earlier_is_422(
+    client: TestClient,
+) -> None:
+    """Naive shown_at + aware answered_at (earlier) must be 422, not 500."""
+    sid = _to_intake(client)
+    qid = get_question_bank().items[0].id
+    payload = {
+        "session_id": sid,
+        **_metrics(qid),
+        "shown_at": "2026-08-08T06:00:00",
+        "answered_at": "2026-08-08T05:59:00Z",
+    }
+    response = client.post("/api/v1/assessment/question-response", json=payload)
+    assert response.status_code == 422
+    assert response.status_code != 500
+
+
+def test_mixed_tz_aware_shown_naive_answered_earlier_is_422(
+    client: TestClient,
+) -> None:
+    """Aware shown_at + naive answered_at (earlier) must be 422, not 500."""
+    sid = _to_intake(client)
+    qid = get_question_bank().items[0].id
+    payload = {
+        "session_id": sid,
+        **_metrics(qid),
+        "shown_at": "2026-08-08T06:00:05Z",
+        "answered_at": "2026-08-08T06:00:00",
+    }
+    response = client.post("/api/v1/assessment/question-response", json=payload)
+    assert response.status_code == 422
+    assert response.status_code != 500
+
+
+def test_mixed_tz_valid_pair_is_200(client: TestClient) -> None:
+    """Naive shown_at + aware answered_at later must succeed."""
+    sid = _to_intake(client)
+    qid = get_question_bank().items[0].id
+    payload = {
+        "session_id": sid,
+        **_metrics(qid),
+        "shown_at": "2026-08-08T06:00:00",
+        "answered_at": "2026-08-08T06:00:05Z",
+    }
+    response = client.post("/api/v1/assessment/question-response", json=payload)
+    assert response.status_code == 200
+
+
 def test_rejects_huge_duration(client: TestClient) -> None:
     sid = _to_intake(client)
     qid = get_question_bank().items[0].id
