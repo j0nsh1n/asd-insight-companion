@@ -87,7 +87,9 @@ spec.md — on any conflict, agents.md and spec.md win.
   command), FLAG it in your change summary as "spec.md drift" and propose the
   edit — the human decides. The spec is the contract you are judged against;
   you never grade your own homework.
-- agents.md: Never edit. If a rule seems wrong, tell the human.
+- agents.md: Never edit on your own initiative — only when the human explicitly
+  directs the edit in the current conversation. If a rule seems wrong, tell the
+  human and propose the change; do not apply it yourself.
 
 ### Placeholders and adoption state
 If spec.md contains {{placeholders}} or a mandated tool is not yet configured
