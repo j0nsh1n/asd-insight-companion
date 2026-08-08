@@ -12,7 +12,7 @@ describe('sessionStorage helpers', () => {
 
   it('saves and loads session id for resume', () => {
     expect(loadSessionId()).toBeNull()
-    saveSessionId('abc-123')
+    expect(saveSessionId('abc-123')).toBe(true)
     expect(loadSessionId()).toBe('abc-123')
   })
 

@@ -26,29 +26,38 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 """
 
-
-def get_db_path() -> Path:
-    return Path(get_settings().sqlite_path)
-
-
 # Wait for locks under concurrent writers (Phase 1 atomic transitions).
 _SQLITE_TIMEOUT_S = 30.0
 
 
+def get_db_path() -> Path:
+    """Return the configured SQLite file path."""
+    return Path(get_settings().sqlite_path)
+
+
+def _configure_connection(conn: sqlite3.Connection) -> None:
+    """Apply per-connection PRAGMAs for safety and concurrency."""
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+
+
 def init_db() -> None:
+    """Create schema (if needed) and enable WAL. Always closes the connection."""
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S) as conn:
+    with get_connection() as conn:
         conn.execute(SCHEMA)
-        conn.commit()
+        # WAL once at init; subsequent connections inherit the journal mode on disk.
+        conn.execute("PRAGMA journal_mode = WAL")
 
 
 @contextmanager
 def get_connection() -> Generator[sqlite3.Connection]:
+    """Yield a configured SQLite connection; commit on success, always close."""
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S)
-    conn.row_factory = sqlite3.Row
+    _configure_connection(conn)
     try:
         yield conn
         conn.commit()

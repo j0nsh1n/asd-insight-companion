@@ -140,4 +140,25 @@ describe('App Phase 1 flow', () => {
       expect(screen.getByText(/age range: 25-34/i)).toBeInTheDocument()
     })
   })
+
+  it('keeps prior session id when start fails', async () => {
+    const user = userEvent.setup()
+    const prior = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+    sessionStore.saveSessionId(prior)
+    mocked.createSession.mockRejectedValue(new Error('network down'))
+
+    render(<App />)
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /resume saved session/i }),
+      ).toBeInTheDocument()
+    })
+    await user.click(
+      screen.getByRole('button', { name: /start anonymous session/i }),
+    )
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/network down/i)
+    })
+    expect(sessionStore.loadSessionId()).toBe(prior)
+  })
 })

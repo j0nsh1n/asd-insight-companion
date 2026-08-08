@@ -1,3 +1,5 @@
+/** Browser sessionStorage helpers for anonymous session resume. */
+
 const SESSION_KEY = 'asd_insight_session_id'
 
 export function loadSessionId(): string | null {
@@ -8,11 +10,13 @@ export function loadSessionId(): string | null {
   }
 }
 
-export function saveSessionId(id: string): void {
+/** Persist session id. Returns false if storage is unavailable. */
+export function saveSessionId(id: string): boolean {
   try {
     sessionStorage.setItem(SESSION_KEY, id)
+    return true
   } catch {
-    // ignore quota / private mode
+    return false
   }
 }
 

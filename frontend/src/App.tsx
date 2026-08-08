@@ -52,10 +52,16 @@ function App() {
   }, [])
 
   const applySession = useCallback((next: SessionResponse) => {
-    saveSessionId(next.id)
+    const stored = saveSessionId(next.id)
     setSession(next)
     setView(stageToView(next.stage))
-    setHasStoredId(true)
+    setHasStoredId(stored)
+    setError(null)
+  }, [])
+
+  const showWelcome = useCallback(() => {
+    // Cannot undo consent server-side; welcome is navigation only.
+    setView('welcome')
     setError(null)
   }, [])
 
@@ -63,7 +69,7 @@ function App() {
     setBusy(true)
     setError(null)
     try {
-      clearSessionId()
+      // Keep any prior session id until create succeeds (resume safety).
       const created = await createSession()
       applySession(created)
     } catch (err) {
@@ -128,17 +134,6 @@ function App() {
     }
   }
 
-  const goWelcome = () => {
-    setView('welcome')
-    setError(null)
-  }
-
-  const goBackFromIntake = () => {
-    // Cannot undo consent server-side; return to welcome overview only.
-    setView('welcome')
-    setError(null)
-  }
-
   return (
     <div className="app-shell">
       <ResearchDisclaimer />
@@ -172,7 +167,7 @@ function App() {
             busy={busy}
             error={error}
             onSubmit={(v) => void handleConsent(v)}
-            onBack={goWelcome}
+            onBack={showWelcome}
           />
         )}
 
@@ -191,7 +186,7 @@ function App() {
                 : null
             }
             onSubmit={(p) => void handleIntake(p)}
-            onBack={goBackFromIntake}
+            onBack={showWelcome}
           />
         )}
       </main>

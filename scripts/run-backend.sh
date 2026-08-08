@@ -23,10 +23,13 @@ fi
 
 export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}"
 
+CURL_OPTS=(--silent --fail --connect-timeout 1 --max-time 2)
+
 # If something already answers our health endpoint, do not start a second server.
-if curl -sf "http://${HOST}:${PORT}/api/v1/health" >/dev/null 2>&1; then
+if curl "${CURL_OPTS[@]}" "http://${HOST}:${PORT}/api/v1/health" >/dev/null 2>&1; then
   echo "Backend already running on http://${HOST}:${PORT}"
-  curl -sS "http://${HOST}:${PORT}/api/v1/health"
+  curl --silent --show-error --connect-timeout 1 --max-time 2 \
+    "http://${HOST}:${PORT}/api/v1/health"
   echo ""
   echo "UI: http://127.0.0.1:5173"
   echo "To restart:  fuser -k ${PORT}/tcp   then re-run this script"

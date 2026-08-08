@@ -1,3 +1,5 @@
+/** Typed client for the Phase 0/1 FastAPI backend. */
+
 export type HealthResponse = {
   status: string
   service: string
@@ -48,30 +50,46 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   'http://127.0.0.1:8000'
 
+function sessionPath(sessionId: string, suffix = ''): string {
+  return `/api/v1/sessions/${encodeURIComponent(sessionId)}${suffix}`
+}
+
 async function parseError(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { detail?: unknown }
     if (typeof body.detail === 'string') return body.detail
     if (Array.isArray(body.detail)) return JSON.stringify(body.detail)
   } catch {
-    // ignore
+    // ignore non-JSON error bodies
   }
   return `Request failed (${response.status})`
 }
 
-async function apiFetch(
-  path: string,
-  init?: RequestInit,
-): Promise<Response> {
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const url = `${API_BASE_URL}${path}`
   try {
     return await fetch(url, init)
-  } catch {
-    throw new Error(
+  } catch (err) {
+    const message =
       `Cannot reach backend at ${API_BASE_URL} (${path}). ` +
-        `Start it with: ./scripts/run-backend.sh`,
-    )
+      `Start it with: ./scripts/run-backend.sh`
+    throw new Error(message, { cause: err })
   }
+}
+
+async function postJson<T>(path: string, payload: unknown): Promise<T> {
+  const response = await apiFetch(path, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json() as Promise<T>
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
@@ -98,7 +116,7 @@ export async function createSession(): Promise<SessionResponse> {
 }
 
 export async function getSession(sessionId: string): Promise<SessionResponse> {
-  const response = await apiFetch(`/api/v1/sessions/${sessionId}`, {
+  const response = await apiFetch(sessionPath(sessionId), {
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) {
@@ -111,36 +129,14 @@ export async function postConsent(
   sessionId: string,
   payload: ConsentPayload,
 ): Promise<SessionResponse> {
-  const response = await apiFetch(`/api/v1/sessions/${sessionId}/consent`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json() as Promise<SessionResponse>
+  return postJson<SessionResponse>(sessionPath(sessionId, '/consent'), payload)
 }
 
 export async function postIntake(
   sessionId: string,
   payload: IntakePayload,
 ): Promise<SessionResponse> {
-  const response = await apiFetch(`/api/v1/sessions/${sessionId}/intake`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json() as Promise<SessionResponse>
+  return postJson<SessionResponse>(sessionPath(sessionId, '/intake'), payload)
 }
 
 export { API_BASE_URL }

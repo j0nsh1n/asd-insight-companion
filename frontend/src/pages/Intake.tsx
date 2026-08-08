@@ -164,7 +164,9 @@ export function Intake({
           </span>
         </label>
         {(localError || error) && (
-          <p className="status-error">{localError ?? error}</p>
+          <p className="status-error" role="alert">
+            {localError ?? error}
+          </p>
         )}
         <div className="button-row">
           <button type="button" className="btn" disabled={busy} onClick={onBack}>

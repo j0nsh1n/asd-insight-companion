@@ -22,7 +22,11 @@ export function Welcome({
         before any intake questions.
       </p>
       <p className="muted">Backend: {backendLabel}</p>
-      {error && <p className="status-error">{error}</p>}
+      {error && (
+        <p className="status-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="button-row">
         <button type="button" className="btn primary" disabled={busy} onClick={onStart}>
           {busy ? 'Starting…' : 'Start anonymous session'}

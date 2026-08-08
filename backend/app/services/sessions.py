@@ -23,15 +23,17 @@ from app.models.session import (
 
 
 def _utc_now() -> str:
+    """Return an ISO-8601 UTC timestamp without microseconds."""
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def _row_mapping(row: sqlite3.Row) -> dict[str, Any]:
-    # sqlite3.Row iterates values, not column names — must use .keys().
+    """Convert a sqlite3.Row to a plain dict (Row iterates values, not keys)."""
     return {key: row[key] for key in row.keys()}  # noqa: SIM118
 
 
 def _row_to_response(row: sqlite3.Row) -> SessionResponse:
+    """Map a database row to the public SessionResponse model."""
     mapping = _row_mapping(row)
     consent = ConsentState(
         research_only=bool(mapping["consent_research_only"]),
@@ -60,13 +62,14 @@ def _row_to_response(row: sqlite3.Row) -> SessionResponse:
 
 
 def _get_row(session_id: str) -> sqlite3.Row | None:
+    """Fetch a session row by id, or None if missing."""
     with get_connection() as conn:
         cur = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
-        row = cur.fetchone()
-        return cast(sqlite3.Row | None, row)
+        return cast(sqlite3.Row | None, cur.fetchone())
 
 
 def create_session() -> SessionResponse:
+    """Create an anonymous session in stage ``created``."""
     session_id = str(uuid.uuid4())
     now = _utc_now()
     with get_connection() as conn:
@@ -86,6 +89,7 @@ def create_session() -> SessionResponse:
 
 
 def get_session(session_id: str) -> SessionResponse:
+    """Return session status for resume, or 404 if unknown."""
     row = _get_row(session_id)
     if row is None:
         raise HTTPException(status_code=404, detail="session_not_found")
@@ -93,34 +97,40 @@ def get_session(session_id: str) -> SessionResponse:
 
 
 def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
-    # body is validated all-true by ConsentRequest
-    _ = body
+    """
+    Atomically advance ``created`` → ``consented``.
+
+    Uses a single conditional UPDATE so concurrent POSTs yield exactly one
+    success. Consent flags are persisted from the validated request body.
+    """
     now = _utc_now()
     with get_connection() as conn:
+        # Commit deferred until context exit when rowcount == 1.
         cur = conn.execute(
             """
             UPDATE sessions SET
                 stage = ?,
                 updated_at = ?,
-                consent_research_only = 1,
-                consent_no_diagnosis = 1,
-                consent_data_minimization = 1,
+                consent_research_only = ?,
+                consent_no_diagnosis = ?,
+                consent_data_minimization = ?,
                 consented_at = ?
             WHERE id = ? AND stage = ?
             """,
             (
                 SessionStage.CONSENTED.value,
                 now,
+                int(body.research_only),
+                int(body.no_diagnosis),
+                int(body.data_minimization),
                 now,
                 session_id,
                 SessionStage.CREATED.value,
             ),
         )
-        if cur.rowcount == 1:
-            pass  # committed on context exit
-        else:
+        if cur.rowcount != 1:
             row = conn.execute(
-                "SELECT * FROM sessions WHERE id = ?",
+                "SELECT id FROM sessions WHERE id = ?",
                 (session_id,),
             ).fetchone()
             if row is None:
@@ -130,9 +140,15 @@ def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
 
 
 def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
+    """
+    Atomically advance ``consented`` → ``intake_complete``.
+
+    Fail-closed: stage ``created`` → 403; already complete → 409.
+    """
     now = _utc_now()
     prefs_json = body.accessibility_prefs.model_dump_json()
     with get_connection() as conn:
+        # Commit deferred until context exit when rowcount == 1.
         cur = conn.execute(
             """
             UPDATE sessions SET
@@ -155,16 +171,14 @@ def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
                 SessionStage.CONSENTED.value,
             ),
         )
-        if cur.rowcount == 1:
-            pass  # committed on context exit
-        else:
+        if cur.rowcount != 1:
             row = conn.execute(
-                "SELECT * FROM sessions WHERE id = ?",
+                "SELECT stage FROM sessions WHERE id = ?",
                 (session_id,),
             ).fetchone()
             if row is None:
                 raise HTTPException(status_code=404, detail="session_not_found")
-            stage = SessionStage(str(_row_mapping(cast(sqlite3.Row, row))["stage"]))
+            stage = SessionStage(str(row["stage"]))
             if stage == SessionStage.CREATED:
                 raise HTTPException(status_code=403, detail="consent_required")
             if stage == SessionStage.INTAKE_COMPLETE:

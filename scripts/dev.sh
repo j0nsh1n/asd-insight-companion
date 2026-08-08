@@ -52,13 +52,14 @@ echo "Starting backend on http://127.0.0.1:8000 ..."
 BACKEND_PID=$!
 
 # Wait for backend health before starting UI (fail closed with clear error).
+CURL_OPTS=(--silent --fail --connect-timeout 1 --max-time 2)
 for _ in $(seq 1 40); do
-  if curl -sf "http://127.0.0.1:8000/api/v1/health" >/dev/null; then
+  if curl "${CURL_OPTS[@]}" "http://127.0.0.1:8000/api/v1/health" >/dev/null; then
     break
   fi
   sleep 0.15
 done
-if ! curl -sf "http://127.0.0.1:8000/api/v1/health" >/dev/null; then
+if ! curl "${CURL_OPTS[@]}" "http://127.0.0.1:8000/api/v1/health" >/dev/null; then
   echo "Backend did not become ready on http://127.0.0.1:8000/api/v1/health"
   echo "Tip: run from repo with: ./scripts/run-backend.sh"
   echo "     (must use backend/.venv and cwd backend/ so 'app' imports)"
@@ -75,13 +76,13 @@ FRONTEND_PID=$!
 
 # Wait until frontend answers (or fail with a clear message).
 for _ in $(seq 1 40); do
-  if curl -sf -o /dev/null "http://127.0.0.1:5173/"; then
+  if curl "${CURL_OPTS[@]}" -o /dev/null "http://127.0.0.1:5173/"; then
     break
   fi
   sleep 0.2
 done
 
-if ! curl -sf -o /dev/null "http://127.0.0.1:5173/"; then
+if ! curl "${CURL_OPTS[@]}" -o /dev/null "http://127.0.0.1:5173/"; then
   echo "Frontend did not become ready on http://127.0.0.1:5173"
   echo "Backend is still up at PID=$BACKEND_PID until this script exits."
   exit 1

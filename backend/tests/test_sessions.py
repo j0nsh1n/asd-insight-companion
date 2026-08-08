@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi.testclient import TestClient
 
 FULL_CONSENT = {
@@ -22,7 +24,7 @@ INTAKE = {
 }
 
 
-def _create(client: TestClient) -> dict:
+def _create(client: TestClient) -> dict[str, Any]:
     response = client.post("/api/v1/sessions")
     assert response.status_code == 201
     body = response.json()
@@ -151,6 +153,54 @@ def test_intake_rejects_invalid_age_range(client: TestClient) -> None:
     bad = {**INTAKE, "age_range": "under-18"}
     response = client.post(f"/api/v1/sessions/{sid}/intake", json=bad)
     assert response.status_code == 422
+
+
+def test_intake_normalizes_language_and_blank_context(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    assert (
+        client.post(f"/api/v1/sessions/{sid}/consent", json=FULL_CONSENT).status_code
+        == 200
+    )
+    payload = {
+        **INTAKE,
+        "language": "  EN  ",
+        "optional_context": "   ",
+    }
+    response = client.post(f"/api/v1/sessions/{sid}/intake", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["intake"]["language"] == "en"
+    assert body["intake"]["optional_context"] is None
+
+
+def test_intake_rejects_short_language_after_normalize(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    client.post(f"/api/v1/sessions/{sid}/consent", json=FULL_CONSENT)
+    # Passes naive min_length before strip; must fail after normalize.
+    response = client.post(
+        f"/api/v1/sessions/{sid}/intake",
+        json={**INTAKE, "language": " x "},
+    )
+    assert response.status_code == 422
+
+
+def test_intake_rejects_optional_context_too_long(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    client.post(f"/api/v1/sessions/{sid}/consent", json=FULL_CONSENT)
+    response = client.post(
+        f"/api/v1/sessions/{sid}/intake",
+        json={**INTAKE, "optional_context": "x" * 501},
+    )
+    assert response.status_code == 422
+
+
+def test_create_session_trailing_slash(client: TestClient) -> None:
+    response = client.post("/api/v1/sessions/")
+    assert response.status_code == 201
+    assert response.json()["stage"] == "created"
 
 
 def test_concurrent_consent_exactly_one_success(client: TestClient) -> None:

@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SessionStage(StrEnum):
+    """Fail-closed progression: created → consented → intake_complete."""
+
     CREATED = "created"
     CONSENTED = "consented"
     INTAKE_COMPLETE = "intake_complete"
@@ -25,6 +27,8 @@ AgeRange = Literal[
 
 
 class AccessibilityPrefs(BaseModel):
+    """Minimized accessibility preferences collected at intake."""
+
     large_text: bool = False
     reduced_motion: bool = False
     screen_reader_hints: bool = False
@@ -48,8 +52,11 @@ class ConsentRequest(BaseModel):
 
 
 class IntakeRequest(BaseModel):
+    """Minimized intake payload (18+ age buckets only)."""
+
     age_range: AgeRange
-    language: str = Field(min_length=2, max_length=32)
+    # Constraints re-checked after normalize_language (strip/lower).
+    language: str = Field(max_length=32)
     accessibility_prefs: AccessibilityPrefs = Field(default_factory=AccessibilityPrefs)
     optional_context: str | None = Field(default=None, max_length=500)
 
@@ -57,8 +64,12 @@ class IntakeRequest(BaseModel):
     @classmethod
     def normalize_language(cls, value: str) -> str:
         cleaned = value.strip().lower()
-        if not cleaned:
-            raise ValueError("language is required")
+        if len(cleaned) < 2:
+            raise ValueError(
+                "language must be at least 2 characters after normalization"
+            )
+        if len(cleaned) > 32:
+            raise ValueError("language must be at most 32 characters")
         return cleaned
 
     @field_validator("optional_context")
@@ -71,6 +82,8 @@ class IntakeRequest(BaseModel):
 
 
 class ConsentState(BaseModel):
+    """Stored consent flags and timestamp for a session."""
+
     research_only: bool
     no_diagnosis: bool
     data_minimization: bool
@@ -78,6 +91,8 @@ class ConsentState(BaseModel):
 
 
 class IntakeState(BaseModel):
+    """Stored minimized intake fields for a session."""
+
     age_range: AgeRange
     language: str
     accessibility_prefs: AccessibilityPrefs
@@ -85,9 +100,17 @@ class IntakeState(BaseModel):
 
 
 class SessionResponse(BaseModel):
+    """Public session status payload (create / get / consent / intake)."""
+
     id: str
     stage: SessionStage
     created_at: str
     updated_at: str
     consent: ConsentState
     intake: IntakeState | None = None
+
+
+class ErrorDetail(BaseModel):
+    """Stable API error body used in OpenAPI docs."""
+
+    detail: str

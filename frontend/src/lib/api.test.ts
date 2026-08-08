@@ -90,8 +90,26 @@ describe('session API helpers', () => {
   })
 
   it('surfaces a clear error when backend is unreachable', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
+    )
     await expect(createSession()).rejects.toThrow(/Cannot reach backend/)
+  })
+
+  it('getSession encodes session id in the path', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => sessionBody,
+      }),
+    )
+    await getSession('a/b?x=1')
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/sessions/a%2Fb%3Fx%3D1'),
+      expect.anything(),
+    )
   })
 
   it('getSession surfaces session_not_found detail', async () => {
@@ -106,7 +124,43 @@ describe('session API helpers', () => {
     await expect(getSession('missing')).rejects.toThrow('session_not_found')
   })
 
-  it('postConsent surfaces consent_required style details', async () => {
+  it('postConsent sends JSON payload and content-type on success', async () => {
+    const consented = {
+      ...sessionBody,
+      stage: 'consented',
+      consent: {
+        research_only: true,
+        no_diagnosis: true,
+        data_minimization: true,
+        consented_at: '2026-01-01T00:01:00+00:00',
+      },
+    }
+    const payload = {
+      research_only: true,
+      no_diagnosis: true,
+      data_minimization: true,
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => consented,
+      }),
+    )
+    await expect(postConsent('sid-1', payload)).resolves.toEqual(consented)
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/sessions\/sid-1\/consent$/),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify(payload),
+      }),
+    )
+  })
+
+  it('postConsent surfaces consent_already_recorded detail', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -122,6 +176,51 @@ describe('session API helpers', () => {
         data_minimization: true,
       }),
     ).rejects.toThrow('consent_already_recorded')
+  })
+
+  it('postIntake sends JSON payload on success', async () => {
+    const done = {
+      ...sessionBody,
+      stage: 'intake_complete',
+      intake: {
+        age_range: '25-34',
+        language: 'en',
+        accessibility_prefs: {
+          large_text: false,
+          reduced_motion: false,
+          screen_reader_hints: false,
+        },
+        optional_context: null,
+      },
+    }
+    const payload = {
+      age_range: '25-34',
+      language: 'en',
+      accessibility_prefs: {
+        large_text: false,
+        reduced_motion: false,
+        screen_reader_hints: false,
+      },
+      optional_context: null,
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => done,
+      }),
+    )
+    await expect(postIntake('sid-1', payload)).resolves.toEqual(done)
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/sessions\/sid-1\/intake$/),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify(payload),
+      }),
+    )
   })
 
   it('postIntake rejects with consent_required detail', async () => {
