@@ -101,6 +101,9 @@ export function Intake({
               </option>
             ))}
           </select>
+          <span className="field-hint">
+            Eligible ages are 18 and older (research prototype; not for minors).
+          </span>
         </label>
         <label className="field">
           <span>Language</span>
@@ -156,6 +159,9 @@ export function Intake({
             maxLength={500}
             rows={3}
           />
+          <span className="field-hint">
+            Do not enter your name, email, phone number, or address.
+          </span>
         </label>
         {(localError || error) && (
           <p className="status-error">{localError ?? error}</p>

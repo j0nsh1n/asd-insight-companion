@@ -95,17 +95,9 @@ def get_session(session_id: str) -> SessionResponse:
 def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
     # body is validated all-true by ConsentRequest
     _ = body
-    row = _get_row(session_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="session_not_found")
-
-    stage = SessionStage(str(_row_mapping(row)["stage"]))
-    if stage != SessionStage.CREATED:
-        raise HTTPException(status_code=409, detail="consent_already_recorded")
-
     now = _utc_now()
     with get_connection() as conn:
-        conn.execute(
+        cur = conn.execute(
             """
             UPDATE sessions SET
                 stage = ?,
@@ -114,30 +106,34 @@ def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
                 consent_no_diagnosis = 1,
                 consent_data_minimization = 1,
                 consented_at = ?
-            WHERE id = ?
+            WHERE id = ? AND stage = ?
             """,
-            (SessionStage.CONSENTED.value, now, now, session_id),
+            (
+                SessionStage.CONSENTED.value,
+                now,
+                now,
+                session_id,
+                SessionStage.CREATED.value,
+            ),
         )
+        if cur.rowcount == 1:
+            pass  # committed on context exit
+        else:
+            row = conn.execute(
+                "SELECT * FROM sessions WHERE id = ?",
+                (session_id,),
+            ).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail="session_not_found")
+            raise HTTPException(status_code=409, detail="consent_already_recorded")
     return get_session(session_id)
 
 
 def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
-    row = _get_row(session_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="session_not_found")
-
-    stage = SessionStage(str(_row_mapping(row)["stage"]))
-    if stage == SessionStage.CREATED:
-        raise HTTPException(status_code=403, detail="consent_required")
-    if stage == SessionStage.INTAKE_COMPLETE:
-        raise HTTPException(status_code=409, detail="intake_already_recorded")
-    if stage != SessionStage.CONSENTED:
-        raise HTTPException(status_code=409, detail="invalid_stage")
-
     now = _utc_now()
     prefs_json = body.accessibility_prefs.model_dump_json()
     with get_connection() as conn:
-        conn.execute(
+        cur = conn.execute(
             """
             UPDATE sessions SET
                 stage = ?,
@@ -146,7 +142,7 @@ def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
                 language = ?,
                 accessibility_prefs = ?,
                 optional_context = ?
-            WHERE id = ?
+            WHERE id = ? AND stage = ?
             """,
             (
                 SessionStage.INTAKE_COMPLETE.value,
@@ -156,6 +152,22 @@ def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
                 prefs_json,
                 body.optional_context,
                 session_id,
+                SessionStage.CONSENTED.value,
             ),
         )
+        if cur.rowcount == 1:
+            pass  # committed on context exit
+        else:
+            row = conn.execute(
+                "SELECT * FROM sessions WHERE id = ?",
+                (session_id,),
+            ).fetchone()
+            if row is None:
+                raise HTTPException(status_code=404, detail="session_not_found")
+            stage = SessionStage(str(_row_mapping(cast(sqlite3.Row, row))["stage"]))
+            if stage == SessionStage.CREATED:
+                raise HTTPException(status_code=403, detail="consent_required")
+            if stage == SessionStage.INTAKE_COMPLETE:
+                raise HTTPException(status_code=409, detail="intake_already_recorded")
+            raise HTTPException(status_code=409, detail="invalid_stage")
     return get_session(session_id)

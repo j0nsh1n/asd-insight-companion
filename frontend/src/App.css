@@ -150,6 +150,12 @@
   font: inherit;
 }
 
+.field-hint {
+  color: #8b98a5;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .fieldset {
   border: 1px solid #2a3542;
   border-radius: 8px;

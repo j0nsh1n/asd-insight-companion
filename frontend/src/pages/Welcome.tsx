@@ -18,7 +18,7 @@ export function Welcome({
       <h2 id="welcome-title">Welcome</h2>
       <p className="muted">
         This is a research-only, non-diagnostic ASD-trait prescreen prototype for
-        teens and adults. Participation is anonymous. You must complete consent
+        adults 18 and older. Participation is anonymous. You must complete consent
         before any intake questions.
       </p>
       <p className="muted">Backend: {backendLabel}</p>

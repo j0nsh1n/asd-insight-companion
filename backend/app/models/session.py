@@ -39,9 +39,7 @@ class ConsentRequest(BaseModel):
 
     @model_validator(mode="after")
     def require_full_consent(self) -> ConsentRequest:
-        if not (
-            self.research_only and self.no_diagnosis and self.data_minimization
-        ):
+        if not (self.research_only and self.no_diagnosis and self.data_minimization):
             raise ValueError(
                 "Incomplete consent: research_only, no_diagnosis, and "
                 "data_minimization must all be true"
@@ -52,9 +50,7 @@ class ConsentRequest(BaseModel):
 class IntakeRequest(BaseModel):
     age_range: AgeRange
     language: str = Field(min_length=2, max_length=32)
-    accessibility_prefs: AccessibilityPrefs = Field(
-        default_factory=AccessibilityPrefs
-    )
+    accessibility_prefs: AccessibilityPrefs = Field(default_factory=AccessibilityPrefs)
     optional_context: str | None = Field(default=None, max_length=500)
 
     @field_validator("language")

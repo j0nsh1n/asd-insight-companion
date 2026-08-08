@@ -151,3 +151,78 @@ def test_intake_rejects_invalid_age_range(client: TestClient) -> None:
     bad = {**INTAKE, "age_range": "under-18"}
     response = client.post(f"/api/v1/sessions/{sid}/intake", json=bad)
     assert response.status_code == 422
+
+
+def test_concurrent_consent_exactly_one_success(client: TestClient) -> None:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    session = _create(client)
+    sid = session["id"]
+    n = 8
+
+    def post_consent() -> int:
+        return client.post(
+            f"/api/v1/sessions/{sid}/consent",
+            json=FULL_CONSENT,
+        ).status_code
+
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        codes = [
+            f.result()
+            for f in as_completed(pool.submit(post_consent) for _ in range(n))
+        ]
+
+    assert codes.count(200) == 1, codes
+    assert codes.count(409) == n - 1, codes
+    assert all(c in (200, 409) for c in codes), codes
+
+    final = client.get(f"/api/v1/sessions/{sid}")
+    assert final.status_code == 200
+    body = final.json()
+    assert body["stage"] == "consented"
+    consented_at = body["consent"]["consented_at"]
+    assert consented_at
+
+    # Losers must not overwrite consented_at
+    for _ in range(n):
+        again = client.post(f"/api/v1/sessions/{sid}/consent", json=FULL_CONSENT)
+        assert again.status_code == 409
+    after = client.get(f"/api/v1/sessions/{sid}").json()
+    assert after["consent"]["consented_at"] == consented_at
+    assert after["stage"] == "consented"
+
+
+def test_concurrent_intake_exactly_one_success(client: TestClient) -> None:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    session = _create(client)
+    sid = session["id"]
+    assert (
+        client.post(f"/api/v1/sessions/{sid}/consent", json=FULL_CONSENT).status_code
+        == 200
+    )
+    consented_at = client.get(f"/api/v1/sessions/{sid}").json()["consent"][
+        "consented_at"
+    ]
+    n = 8
+
+    def post_intake() -> int:
+        return client.post(
+            f"/api/v1/sessions/{sid}/intake",
+            json=INTAKE,
+        ).status_code
+
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        codes = [
+            f.result() for f in as_completed(pool.submit(post_intake) for _ in range(n))
+        ]
+
+    assert codes.count(200) == 1, codes
+    assert codes.count(409) == n - 1, codes
+    assert all(c in (200, 409) for c in codes), codes
+
+    final = client.get(f"/api/v1/sessions/{sid}")
+    assert final.status_code == 200
+    body = final.json()
+    assert body["stage"] == "intake_complete"
+    assert body["consent"]["consented_at"] == consented_at

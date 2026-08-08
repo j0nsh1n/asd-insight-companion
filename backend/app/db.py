@@ -31,10 +31,14 @@ def get_db_path() -> Path:
     return Path(get_settings().sqlite_path)
 
 
+# Wait for locks under concurrent writers (Phase 1 atomic transitions).
+_SQLITE_TIMEOUT_S = 30.0
+
+
 def init_db() -> None:
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path) as conn:
+    with sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S) as conn:
         conn.execute(SCHEMA)
         conn.commit()
 
@@ -43,7 +47,7 @@ def init_db() -> None:
 def get_connection() -> Generator[sqlite3.Connection]:
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
