@@ -93,7 +93,8 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
           />
           <span>
             I agree to minimized, anonymous research data only (no raw webcam
-            video upload by default).
+            video upload by default), including per-question response timing,
+            time-to-first-interaction, and answer-change counts.
           </span>
         </label>
         {(localError || error) && (

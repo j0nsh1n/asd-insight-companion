@@ -40,8 +40,9 @@ const baseSession = (
     consented_at: stage === 'created' ? null : '2026-01-01T00:01:00+00:00',
   },
   intake:
-    stage === 'intake_complete'
-      ? {
+    stage === 'created' || stage === 'consented'
+      ? null
+      : {
           age_range: '25-34',
           language: 'en',
           accessibility_prefs: {
@@ -50,8 +51,8 @@ const baseSession = (
             screen_reader_hints: false,
           },
           optional_context: null,
-        }
-      : null,
+        },
+  questionnaire: null,
   ...extras,
 })
 
@@ -126,19 +127,54 @@ describe('App Phase 1 flow', () => {
     })
   })
 
-  it('shows intake complete summary after full resume of completed stage', async () => {
+  it('routes intake_complete stage to questionnaire view', async () => {
     const user = userEvent.setup()
     sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
     mocked.getSession.mockResolvedValue(baseSession('intake_complete'))
-
+    // Questionnaire page will call assessment APIs; stub as network fail to
+    // still prove routing (heading appears even if load errors).
     render(<App />)
     await user.click(
       screen.getByRole('button', { name: /resume saved session/i }),
     )
     await waitFor(() => {
-      expect(screen.getByText(/intake complete/i)).toBeInTheDocument()
-      expect(screen.getByText(/age range: 25-34/i)).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name: /questionnaire/i }),
+      ).toBeInTheDocument()
     })
+  })
+
+  it('applies large_text accessibility class from intake prefs', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(
+      baseSession('consented', {
+        intake: {
+          age_range: '25-34',
+          language: 'en',
+          accessibility_prefs: {
+            large_text: true,
+            reduced_motion: true,
+            screen_reader_hints: true,
+          },
+          optional_context: null,
+        },
+      }),
+    )
+
+    const { container } = render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /^intake$/i }),
+      ).toBeInTheDocument()
+    })
+    const shell = container.querySelector('.app-shell')
+    expect(shell).toHaveClass('a11y-large-text')
+    expect(shell).toHaveClass('a11y-reduced-motion')
+    expect(shell).toHaveClass('a11y-screen-reader-hints')
   })
 
   it('keeps prior session id when start fails', async () => {

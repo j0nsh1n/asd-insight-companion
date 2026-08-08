@@ -17,6 +17,8 @@ from app.models.session import (
     ConsentState,
     IntakeRequest,
     IntakeState,
+    QuestionnaireSummary,
+    QuestionnaireTimingSummary,
     SessionResponse,
     SessionStage,
 )
@@ -30,6 +32,31 @@ def _utc_now() -> str:
 def _row_mapping(row: sqlite3.Row) -> dict[str, Any]:
     """Convert a sqlite3.Row to a plain dict (Row iterates values, not keys)."""
     return {key: row[key] for key in row.keys()}  # noqa: SIM118
+
+
+def questionnaire_summary_from_mapping(
+    mapping: dict[str, Any],
+) -> QuestionnaireSummary | None:
+    """Build questionnaire summary from a sessions row mapping (may be partial)."""
+    started = mapping.get("questionnaire_started_at")
+    completed = mapping.get("questionnaire_completed_at")
+    score = mapping.get("questionnaire_score")
+    item_count = mapping.get("questionnaire_item_count")
+    bank_id = mapping.get("questionnaire_bank_id")
+    timing_raw = mapping.get("questionnaire_timing_summary")
+    if not any([started, completed, score is not None, timing_raw, bank_id]):
+        return None
+    timing = None
+    if timing_raw:
+        timing = QuestionnaireTimingSummary.model_validate(json.loads(str(timing_raw)))
+    return QuestionnaireSummary(
+        started_at=cast(str | None, started),
+        completed_at=cast(str | None, completed),
+        score=int(score) if score is not None else None,
+        item_count=int(item_count) if item_count is not None else None,
+        bank_id=cast(str | None, bank_id),
+        timing=timing,
+    )
 
 
 def _row_to_response(row: sqlite3.Row) -> SessionResponse:
@@ -58,6 +85,7 @@ def _row_to_response(row: sqlite3.Row) -> SessionResponse:
         updated_at=str(mapping["updated_at"]),
         consent=consent,
         intake=intake,
+        questionnaire=questionnaire_summary_from_mapping(mapping),
     )
 
 

@@ -9,11 +9,13 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SessionStage(StrEnum):
-    """Fail-closed progression: created → consented → intake_complete."""
+    """Fail-closed progression through consent, intake, and questionnaire."""
 
     CREATED = "created"
     CONSENTED = "consented"
     INTAKE_COMPLETE = "intake_complete"
+    QUESTIONNAIRE_IN_PROGRESS = "questionnaire_in_progress"
+    QUESTIONNAIRE_COMPLETE = "questionnaire_complete"
 
 
 AgeRange = Literal[
@@ -99,8 +101,29 @@ class IntakeState(BaseModel):
     optional_context: str | None = None
 
 
+class QuestionnaireTimingSummary(BaseModel):
+    """Aggregate timing metrics across questionnaire items."""
+
+    item_count: int
+    total_time_ms: int
+    mean_time_to_first_interaction_ms: float
+    mean_total_time_on_question_ms: float
+    total_answer_changes: int
+
+
+class QuestionnaireSummary(BaseModel):
+    """Stored questionnaire outcome on the session (non-diagnostic)."""
+
+    started_at: str | None = None
+    completed_at: str | None = None
+    score: int | None = None
+    item_count: int | None = None
+    bank_id: str | None = None
+    timing: QuestionnaireTimingSummary | None = None
+
+
 class SessionResponse(BaseModel):
-    """Public session status payload (create / get / consent / intake)."""
+    """Public session status payload (create / get / consent / intake / q)."""
 
     id: str
     stage: SessionStage
@@ -108,6 +131,7 @@ class SessionResponse(BaseModel):
     updated_at: str
     consent: ConsentState
     intake: IntakeState | None = None
+    questionnaire: QuestionnaireSummary | None = None
 
 
 class ErrorDetail(BaseModel):

@@ -1,4 +1,4 @@
-/** Typed client for the Phase 0/1 FastAPI backend. */
+/** Typed client for the FastAPI backend (Phase 0–2). */
 
 export type HealthResponse = {
   status: string
@@ -6,12 +6,32 @@ export type HealthResponse = {
   version: string
 }
 
-export type SessionStage = 'created' | 'consented' | 'intake_complete'
+export type SessionStage =
+  | 'created'
+  | 'consented'
+  | 'intake_complete'
+  | 'questionnaire_in_progress'
+  | 'questionnaire_complete'
 
 export type AccessibilityPrefs = {
   large_text: boolean
   reduced_motion: boolean
   screen_reader_hints: boolean
+}
+
+export type QuestionnaireSummary = {
+  started_at: string | null
+  completed_at: string | null
+  score: number | null
+  item_count: number | null
+  bank_id: string | null
+  timing: {
+    item_count: number
+    total_time_ms: number
+    mean_time_to_first_interaction_ms: number
+    mean_total_time_on_question_ms: number
+    total_answer_changes: number
+  } | null
 }
 
 export type SessionResponse = {
@@ -31,6 +51,7 @@ export type SessionResponse = {
     accessibility_prefs: AccessibilityPrefs
     optional_context: string | null
   } | null
+  questionnaire: QuestionnaireSummary | null
 }
 
 export type ConsentPayload = {
@@ -44,6 +65,64 @@ export type IntakePayload = {
   language: string
   accessibility_prefs: AccessibilityPrefs
   optional_context: string | null
+}
+
+export type ScaleOption = { value: number; label: string }
+
+export type QuestionItem = {
+  id: string
+  text: string
+  required: boolean
+  reverse_scored: boolean
+}
+
+export type QuestionBank = {
+  bank_id: string
+  label: string
+  scale: ScaleOption[]
+  items: QuestionItem[]
+  required_count: number
+}
+
+export type QuestionResponsePayload = {
+  session_id: string
+  question_id: string
+  answer_value: number
+  shown_at: string
+  answered_at: string
+  time_to_first_interaction_ms: number
+  total_time_on_question_ms: number
+  answer_change_count: number
+}
+
+export type StoredQuestionResponse = {
+  question_id: string
+  answer_value: number
+  shown_at: string
+  answered_at: string
+  time_to_first_interaction_ms: number
+  total_time_on_question_ms: number
+  answer_change_count: number
+}
+
+export type QuestionResponseResult = {
+  session: SessionResponse
+  response: StoredQuestionResponse
+  answered_count: number
+  required_count: number
+  next_question_id: string | null
+}
+
+export type QuestionnaireProgress = {
+  session_id: string
+  stage: SessionStage
+  bank_id: string
+  required_count: number
+  answered_count: number
+  answered: Record<string, StoredQuestionResponse>
+  next_question_id: string | null
+  ordered_question_ids: string[]
+  session: SessionResponse
 }
 
 const API_BASE_URL =
@@ -137,6 +216,46 @@ export async function postIntake(
   payload: IntakePayload,
 ): Promise<SessionResponse> {
   return postJson<SessionResponse>(sessionPath(sessionId, '/intake'), payload)
+}
+
+export async function fetchQuestionBank(): Promise<QuestionBank> {
+  const response = await apiFetch('/api/v1/assessment/questionnaire', {
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json() as Promise<QuestionBank>
+}
+
+export async function fetchQuestionnaireProgress(
+  sessionId: string,
+): Promise<QuestionnaireProgress> {
+  const response = await apiFetch(
+    `/api/v1/assessment/questionnaire/progress/${encodeURIComponent(sessionId)}`,
+    { headers: { Accept: 'application/json' } },
+  )
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json() as Promise<QuestionnaireProgress>
+}
+
+export async function postQuestionResponse(
+  payload: QuestionResponsePayload,
+): Promise<QuestionResponseResult> {
+  return postJson<QuestionResponseResult>(
+    '/api/v1/assessment/question-response',
+    payload,
+  )
+}
+
+export async function postQuestionnaireComplete(
+  sessionId: string,
+): Promise<SessionResponse> {
+  return postJson<SessionResponse>('/api/v1/assessment/questionnaire/complete', {
+    session_id: sessionId,
+  })
 }
 
 export { API_BASE_URL }

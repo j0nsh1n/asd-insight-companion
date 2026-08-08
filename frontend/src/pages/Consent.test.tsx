@@ -82,4 +82,15 @@ describe('Consent', () => {
     const boxes = screen.getAllByRole('checkbox')
     expect(boxes.every((b) => !(b as HTMLInputElement).checked)).toBe(true)
   })
+
+  it('data-minimization consent mentions timing telemetry', () => {
+    render(
+      <Consent busy={false} error={null} onSubmit={vi.fn()} onBack={vi.fn()} />,
+    )
+    expect(
+      screen.getByText(/per-question response timing/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/time-to-first-interaction/i)).toBeInTheDocument()
+    expect(screen.getByText(/answer-change counts/i)).toBeInTheDocument()
+  })
 })
