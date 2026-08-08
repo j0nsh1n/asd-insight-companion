@@ -7,7 +7,14 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
 @router.post("", response_model=SessionResponse, status_code=201)
+@router.post(
+    "/",
+    response_model=SessionResponse,
+    status_code=201,
+    include_in_schema=False,
+)
 def create_session() -> SessionResponse:
+    """Create anonymous session. Accept both /sessions and /sessions/."""
     return session_service.create_session()
 
 

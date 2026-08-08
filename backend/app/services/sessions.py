@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import uuid
 from datetime import UTC, datetime
+from typing import Any, cast
 
 from fastapi import HTTPException
 
@@ -24,38 +26,44 @@ def _utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
-def _row_to_response(row: object) -> SessionResponse:
-    mapping = dict(row)  # type: ignore[arg-type]
+def _row_mapping(row: sqlite3.Row) -> dict[str, Any]:
+    # sqlite3.Row iterates values, not column names — must use .keys().
+    return {key: row[key] for key in row.keys()}  # noqa: SIM118
+
+
+def _row_to_response(row: sqlite3.Row) -> SessionResponse:
+    mapping = _row_mapping(row)
     consent = ConsentState(
         research_only=bool(mapping["consent_research_only"]),
         no_diagnosis=bool(mapping["consent_no_diagnosis"]),
         data_minimization=bool(mapping["consent_data_minimization"]),
-        consented_at=mapping["consented_at"],
+        consented_at=cast(str | None, mapping["consented_at"]),
     )
     intake: IntakeState | None = None
     if mapping["age_range"] is not None:
         prefs_raw = mapping["accessibility_prefs"] or "{}"
-        prefs = AccessibilityPrefs.model_validate(json.loads(prefs_raw))
+        prefs = AccessibilityPrefs.model_validate(json.loads(str(prefs_raw)))
         intake = IntakeState(
             age_range=mapping["age_range"],
             language=mapping["language"] or "en",
             accessibility_prefs=prefs,
-            optional_context=mapping["optional_context"],
+            optional_context=cast(str | None, mapping["optional_context"]),
         )
     return SessionResponse(
-        id=mapping["id"],
-        stage=SessionStage(mapping["stage"]),
-        created_at=mapping["created_at"],
-        updated_at=mapping["updated_at"],
+        id=str(mapping["id"]),
+        stage=SessionStage(str(mapping["stage"])),
+        created_at=str(mapping["created_at"]),
+        updated_at=str(mapping["updated_at"]),
         consent=consent,
         intake=intake,
     )
 
 
-def _get_row(session_id: str) -> object | None:
+def _get_row(session_id: str) -> sqlite3.Row | None:
     with get_connection() as conn:
         cur = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
-        return cur.fetchone()
+        row = cur.fetchone()
+        return cast(sqlite3.Row | None, row)
 
 
 def create_session() -> SessionResponse:
@@ -72,7 +80,8 @@ def create_session() -> SessionResponse:
             (session_id, SessionStage.CREATED.value, now, now),
         )
     row = _get_row(session_id)
-    assert row is not None
+    if row is None:
+        raise HTTPException(status_code=500, detail="session_create_failed")
     return _row_to_response(row)
 
 
@@ -84,11 +93,13 @@ def get_session(session_id: str) -> SessionResponse:
 
 
 def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
+    # body is validated all-true by ConsentRequest
+    _ = body
     row = _get_row(session_id)
     if row is None:
         raise HTTPException(status_code=404, detail="session_not_found")
 
-    stage = SessionStage(dict(row)["stage"])  # type: ignore[arg-type]
+    stage = SessionStage(str(_row_mapping(row)["stage"]))
     if stage != SessionStage.CREATED:
         raise HTTPException(status_code=409, detail="consent_already_recorded")
 
@@ -107,8 +118,6 @@ def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
             """,
             (SessionStage.CONSENTED.value, now, now, session_id),
         )
-    # body is validated to all-true; flags stored as accepted
-    _ = body
     return get_session(session_id)
 
 
@@ -117,7 +126,7 @@ def record_intake(session_id: str, body: IntakeRequest) -> SessionResponse:
     if row is None:
         raise HTTPException(status_code=404, detail="session_not_found")
 
-    stage = SessionStage(dict(row)["stage"])  # type: ignore[arg-type]
+    stage = SessionStage(str(_row_mapping(row)["stage"]))
     if stage == SessionStage.CREATED:
         raise HTTPException(status_code=403, detail="consent_required")
     if stage == SessionStage.INTAKE_COMPLETE:

@@ -59,8 +59,23 @@ async function parseError(response: Response): Promise<string> {
   return `Request failed (${response.status})`
 }
 
+async function apiFetch(
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const url = `${API_BASE_URL}${path}`
+  try {
+    return await fetch(url, init)
+  } catch {
+    throw new Error(
+      `Cannot reach backend at ${API_BASE_URL} (${path}). ` +
+        `Start it with: ./scripts/run-backend.sh`,
+    )
+  }
+}
+
 export async function fetchHealth(): Promise<HealthResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/health`)
+  const response = await apiFetch('/api/v1/health')
   if (!response.ok) {
     throw new Error(`Health check failed (${response.status})`)
   }
@@ -72,8 +87,9 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function createSession(): Promise<SessionResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/sessions`, {
+  const response = await apiFetch('/api/v1/sessions', {
     method: 'POST',
+    headers: { Accept: 'application/json' },
   })
   if (!response.ok) {
     throw new Error(await parseError(response))
@@ -82,7 +98,9 @@ export async function createSession(): Promise<SessionResponse> {
 }
 
 export async function getSession(sessionId: string): Promise<SessionResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/sessions/${sessionId}`)
+  const response = await apiFetch(`/api/v1/sessions/${sessionId}`, {
+    headers: { Accept: 'application/json' },
+  })
   if (!response.ok) {
     throw new Error(await parseError(response))
   }
@@ -93,14 +111,14 @@ export async function postConsent(
   sessionId: string,
   payload: ConsentPayload,
 ): Promise<SessionResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/sessions/${sessionId}/consent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+  const response = await apiFetch(`/api/v1/sessions/${sessionId}/consent`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify(payload),
+  })
   if (!response.ok) {
     throw new Error(await parseError(response))
   }
@@ -111,14 +129,14 @@ export async function postIntake(
   sessionId: string,
   payload: IntakePayload,
 ): Promise<SessionResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/sessions/${sessionId}/intake`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+  const response = await apiFetch(`/api/v1/sessions/${sessionId}/intake`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify(payload),
+  })
   if (!response.ok) {
     throw new Error(await parseError(response))
   }

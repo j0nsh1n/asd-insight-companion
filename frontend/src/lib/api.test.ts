@@ -30,6 +30,7 @@ describe('fetchHealth', () => {
     await expect(fetchHealth()).resolves.toEqual(body)
     expect(fetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/v1\/health$/),
+      undefined,
     )
   })
 
@@ -86,6 +87,11 @@ describe('session API helpers', () => {
       expect.stringMatching(/\/api\/v1\/sessions$/),
       expect.objectContaining({ method: 'POST' }),
     )
+  })
+
+  it('surfaces a clear error when backend is unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+    await expect(createSession()).rejects.toThrow(/Cannot reach backend/)
   })
 
   it('getSession surfaces session_not_found detail', async () => {

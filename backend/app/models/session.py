@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class SessionStage(str, Enum):
+class SessionStage(StrEnum):
     CREATED = "created"
     CONSENTED = "consented"
     INTAKE_COMPLETE = "intake_complete"

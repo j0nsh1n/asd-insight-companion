@@ -12,7 +12,7 @@ from app.main import app
 @pytest.fixture()
 def client(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Generator[TestClient, None, None]:
+) -> Generator[TestClient]:
     db_path = tmp_path / "phase1-test.db"
     monkeypatch.setenv("SQLITE_PATH", str(db_path))
     get_settings.cache_clear()

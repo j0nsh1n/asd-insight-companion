@@ -40,8 +40,9 @@ def init_db() -> None:
 
 
 @contextmanager
-def get_connection() -> Generator[sqlite3.Connection, None, None]:
+def get_connection() -> Generator[sqlite3.Connection]:
     path = get_db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
