@@ -100,10 +100,7 @@ class QuestionResponseRequest(BaseModel):
             raise ValueError(
                 "total_time_on_question_ms must be >= time_to_first_interaction_ms"
             )
-        if self.total_time_on_question_ms > MAX_ITEM_DURATION_MS:
-            raise ValueError(
-                f"total_time_on_question_ms must be <= {MAX_ITEM_DURATION_MS}"
-            )
+        # Upper bound is enforced by Field(le=MAX_ITEM_DURATION_MS).
         return self
 
 

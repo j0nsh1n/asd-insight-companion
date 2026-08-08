@@ -40,17 +40,22 @@ export function Questionnaire({
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  /** All required items answered but complete not yet finalized (resume path). */
+  const [readyToFinish, setReadyToFinish] = useState(false)
+  const [liveMessage, setLiveMessage] = useState('')
 
   const shownAtRef = useRef<string>(isoNow())
   const firstInteractionMsRef = useRef<number | null>(null)
   const changeCountRef = useRef(0)
   const questionStartedPerfRef = useRef(performance.now())
+  const questionHeadingRef = useRef<HTMLParagraphElement | null>(null)
 
   const items = bank?.items ?? []
-  const current: QuestionItem | null = items[index] ?? null
+  const current: QuestionItem | null =
+    readyToFinish || index >= items.length ? null : (items[index] ?? null)
   const isComplete = session.stage === 'questionnaire_complete'
   const progressLabel = bank
-    ? `${Math.min(index + 1, items.length)} / ${items.length}`
+    ? `${Math.min(index + 1, Math.max(items.length, 1))} / ${items.length}`
     : '…'
 
   const scale: ScaleOption[] = bank?.scale ?? []
@@ -73,17 +78,35 @@ export function Questionnaire({
 
         if (progress.session.stage === 'questionnaire_complete') {
           setIndex(b.items.length)
+          setReadyToFinish(false)
           return
         }
 
         const nextId = progress.next_question_id
+        if (
+          nextId === null &&
+          progress.session.stage === 'questionnaire_in_progress' &&
+          progress.answered_count >= progress.required_count
+        ) {
+          // Last answers saved but complete never finished — offer Finish.
+          setReadyToFinish(true)
+          setIndex(b.items.length)
+          setLiveMessage(
+            'All questions answered. Use Finish questionnaire to complete.',
+          )
+          return
+        }
+
+        setReadyToFinish(false)
         const nextIndex = nextId
           ? b.items.findIndex((i) => i.id === nextId)
-          : b.items.length
+          : 0
         setIndex(nextIndex >= 0 ? nextIndex : 0)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load questionnaire')
+          setError(
+            err instanceof Error ? err.message : 'Failed to load questionnaire',
+          )
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -94,16 +117,21 @@ export function Questionnaire({
     }
   }, [sessionId, onSessionUpdate])
 
-  // Reset per-question timing when the visible item changes.
+  // Reset per-question timing when the visible item changes; announce progress.
   useEffect(() => {
-    if (!current) return
+    if (!current || !bank) return
     shownAtRef.current = isoNow()
     firstInteractionMsRef.current = null
     changeCountRef.current = 0
     questionStartedPerfRef.current = performance.now()
     const prior = answered[current.id]
     setSelected(prior ? prior.answer_value : null)
-  }, [current?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- intentional reset on question id
+    setLiveMessage(
+      `Question ${index + 1} of ${bank.items.length}. ${current.text}`,
+    )
+    // Move focus to question text for keyboard / SR continuity.
+    questionHeadingRef.current?.focus()
+  }, [current?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- reset on question id only
 
   const markInteraction = () => {
     if (firstInteractionMsRef.current === null) {
@@ -118,10 +146,24 @@ export function Questionnaire({
     markInteraction()
     if (selected !== null && selected !== value) {
       changeCountRef.current += 1
-    } else if (selected === null) {
-      // first selection is not a "change"
     }
     setSelected(value)
+  }
+
+  const handleFinish = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const completed = await postQuestionnaireComplete(sessionId)
+      setSession(completed)
+      onSessionUpdate(completed)
+      setReadyToFinish(false)
+      setLiveMessage('Questionnaire complete.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not complete questionnaire')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleNext = async () => {
@@ -162,6 +204,8 @@ export function Questionnaire({
         setSession(completed)
         onSessionUpdate(completed)
         setIndex(bank.items.length)
+        setReadyToFinish(false)
+        setLiveMessage('Questionnaire complete.')
       } else {
         setIndex((i) => i + 1)
       }
@@ -204,6 +248,39 @@ export function Questionnaire({
     )
   }
 
+  if (readyToFinish && bank) {
+    return (
+      <section className="panel" aria-labelledby="q-finish-title">
+        <h2 id="q-finish-title">Finish questionnaire</h2>
+        <p className="muted">
+          All {bank.required_count} required items are saved. Confirm to
+          complete this research questionnaire portion.
+        </p>
+        <div className="sr-only" role="status" aria-live="polite">
+          {liveMessage}
+        </div>
+        {error && (
+          <p className="status-error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="button-row">
+          <button type="button" className="btn" disabled={busy} onClick={onBack}>
+            Back
+          </button>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={busy}
+            onClick={() => void handleFinish()}
+          >
+            {busy ? 'Saving…' : 'Finish questionnaire'}
+          </button>
+        </div>
+      </section>
+    )
+  }
+
   if (!bank || !current) {
     return (
       <section className="panel">
@@ -229,6 +306,10 @@ export function Questionnaire({
         only.
       </p>
 
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {liveMessage}
+      </div>
+
       <div className="progress-block" aria-label={`Progress ${progressLabel}`}>
         <div className="progress-meta">
           <span>
@@ -236,12 +317,23 @@ export function Questionnaire({
           </span>
           <span>{answeredCount} saved</span>
         </div>
-        <div className="progress-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div
+          className="progress-bar"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
 
-      <p className="question-text" id={`question-text-${current.id}`}>
+      <p
+        className="question-text"
+        id={`question-text-${current.id}`}
+        ref={questionHeadingRef}
+        tabIndex={-1}
+      >
         {current.text}
       </p>
 
@@ -254,6 +346,7 @@ export function Questionnaire({
           <button
             key={opt.value}
             type="button"
+            aria-pressed={selected === opt.value}
             className={
               selected === opt.value ? 'btn scale-btn selected' : 'btn scale-btn'
             }

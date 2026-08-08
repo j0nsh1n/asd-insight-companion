@@ -92,12 +92,19 @@ def init_db() -> None:
 
 
 @contextmanager
-def get_connection() -> Generator[sqlite3.Connection]:
-    """Yield a configured SQLite connection; commit on success, always close."""
+def get_connection(*, immediate: bool = False) -> Generator[sqlite3.Connection]:
+    """Yield a configured SQLite connection; commit on success, always close.
+
+    When ``immediate`` is True, use BEGIN IMMEDIATE so concurrent writers
+    serialize (needed for questionnaire answer vs complete races).
+    """
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S)
     _configure_connection(conn)
+    if immediate:
+        # First statement in this connection acquires a write lock immediately.
+        conn.isolation_level = "IMMEDIATE"
     try:
         yield conn
         conn.commit()

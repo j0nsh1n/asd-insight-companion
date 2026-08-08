@@ -102,12 +102,13 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
         raise HTTPException(status_code=422, detail="invalid_answer_value")
 
     now = _utc_now()
-    with get_connection() as conn:
+    # IMMEDIATE serializes writers so complete cannot commit mid-upsert.
+    with get_connection(immediate=True) as conn:
         row = _require_session_row(conn, body.session_id)
         stage = SessionStage(str(row["stage"]))
         _assert_questionnaire_writable(stage)
 
-        # Single atomic stage flip on first answer (no redundant second UPDATE).
+        # Single atomic stage flip on first answer.
         if stage == SessionStage.INTAKE_COMPLETE:
             cur = conn.execute(
                 """
@@ -126,18 +127,24 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
                 ),
             )
             if cur.rowcount != 1:
-                # Concurrent start won the flip — re-check writable stage.
                 row = _require_session_row(conn, body.session_id)
                 stage = SessionStage(str(row["stage"]))
                 _assert_questionnaire_writable(stage)
 
-        conn.execute(
+        # Stage-conditional upsert: never write after questionnaire_complete.
+        cur = conn.execute(
             """
             INSERT INTO question_responses (
                 session_id, question_id, shown_at, answered_at,
                 time_to_first_interaction_ms, total_time_on_question_ms,
                 answer_change_count, answer_value, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            )
+            SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+            WHERE EXISTS (
+                SELECT 1 FROM sessions
+                WHERE id = ?
+                  AND stage IN (?, ?)
+            )
             ON CONFLICT(session_id, question_id) DO UPDATE SET
                 shown_at = excluded.shown_at,
                 answered_at = excluded.answered_at,
@@ -146,6 +153,11 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
                 answer_change_count = excluded.answer_change_count,
                 answer_value = excluded.answer_value,
                 updated_at = excluded.updated_at
+            WHERE EXISTS (
+                SELECT 1 FROM sessions
+                WHERE id = excluded.session_id
+                  AND stage IN (?, ?)
+            )
             """,
             (
                 body.session_id,
@@ -157,9 +169,19 @@ def record_question_response(body: QuestionResponseRequest) -> QuestionResponseR
                 body.answer_change_count,
                 body.answer_value,
                 now,
+                body.session_id,
+                SessionStage.INTAKE_COMPLETE.value,
+                SessionStage.QUESTIONNAIRE_IN_PROGRESS.value,
+                SessionStage.INTAKE_COMPLETE.value,
+                SessionStage.QUESTIONNAIRE_IN_PROGRESS.value,
             ),
         )
-        # Keep session.updated_at current for every answer (including post-start).
+        if cur.rowcount != 1:
+            row = _require_session_row(conn, body.session_id)
+            stage = SessionStage(str(row["stage"]))
+            _assert_questionnaire_writable(stage)
+            raise HTTPException(status_code=409, detail="invalid_stage")
+
         conn.execute(
             "UPDATE sessions SET updated_at = ? WHERE id = ?",
             (now, body.session_id),
@@ -195,9 +217,10 @@ def get_progress(session_id: str) -> QuestionnaireProgress:
         answered = _load_responses(conn, session_id)
 
     session = session_service.get_session(session_id)
+    # Derive next_id from the same stage as the returned session payload.
     next_id = (
         None
-        if stage == SessionStage.QUESTIONNAIRE_COMPLETE
+        if session.stage == SessionStage.QUESTIONNAIRE_COMPLETE
         else _next_unanswered(ordered, answered)
     )
     return QuestionnaireProgress(
@@ -222,7 +245,7 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
     scale_min, scale_max = scale_vals[0], scale_vals[-1]
 
     now = _utc_now()
-    with get_connection() as conn:
+    with get_connection(immediate=True) as conn:
         row = _require_session_row(conn, body.session_id)
         stage = SessionStage(str(row["stage"]))
         if stage == SessionStage.QUESTIONNAIRE_COMPLETE:

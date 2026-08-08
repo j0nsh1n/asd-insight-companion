@@ -280,10 +280,11 @@ def test_complete_stores_bank_id(client: TestClient) -> None:
     sid = _to_intake(client)
     bank = get_question_bank()
     for item in bank.items:
-        client.post(
+        r = client.post(
             "/api/v1/assessment/question-response",
             json={"session_id": sid, **_metrics(item.id)},
         )
+        assert r.status_code == 200, r.text
     done = client.post(
         "/api/v1/assessment/questionnaire/complete",
         json={"session_id": sid},
@@ -298,8 +299,8 @@ def test_concurrent_first_answers_stage_flips_once(client: TestClient) -> None:
     sid = _to_intake(client)
     bank = get_question_bank()
     # Distinct first answers on different items so upserts do not collide.
+    assert len(bank.items) >= 8, "bank must supply at least 8 items for this test"
     items = bank.items[:8]
-    assert len(items) >= 8
 
     def post_one(item_id: str) -> int:
         return client.post(
@@ -321,10 +322,11 @@ def test_double_complete_409(client: TestClient) -> None:
     sid = _to_intake(client)
     bank = get_question_bank()
     for item in bank.items:
-        client.post(
+        r = client.post(
             "/api/v1/assessment/question-response",
             json={"session_id": sid, **_metrics(item.id)},
         )
+        assert r.status_code == 200, r.text
     assert (
         client.post(
             "/api/v1/assessment/questionnaire/complete",

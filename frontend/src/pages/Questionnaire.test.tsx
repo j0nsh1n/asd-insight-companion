@@ -147,6 +147,63 @@ describe('Questionnaire', () => {
     expect(text.toLowerCase()).not.toContain('score')
   })
 
+  it('offers finish when all answers saved but not completed', async () => {
+    const user = userEvent.setup()
+    const onSessionUpdate = vi.fn()
+    const inProgress = baseSession('questionnaire_in_progress')
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'questionnaire_in_progress',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 2,
+      answered: {
+        ri_01: {
+          question_id: 'ri_01',
+          answer_value: 3,
+          shown_at: 't0',
+          answered_at: 't1',
+          time_to_first_interaction_ms: 10,
+          total_time_on_question_ms: 100,
+          answer_change_count: 0,
+        },
+        ri_02: {
+          question_id: 'ri_02',
+          answer_value: 2,
+          shown_at: 't0',
+          answered_at: 't1',
+          time_to_first_interaction_ms: 10,
+          total_time_on_question_ms: 100,
+          answer_change_count: 0,
+        },
+      },
+      next_question_id: null,
+      ordered_question_ids: ['ri_01', 'ri_02'],
+      session: inProgress,
+    })
+    vi.mocked(api.postQuestionnaireComplete).mockResolvedValue(
+      baseSession('questionnaire_complete'),
+    )
+
+    render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={inProgress}
+        onSessionUpdate={onSessionUpdate}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await screen.findByRole('heading', { name: /finish questionnaire/i })
+    await user.click(
+      screen.getByRole('button', { name: /finish questionnaire/i }),
+    )
+    await waitFor(() => {
+      expect(api.postQuestionnaireComplete).toHaveBeenCalledWith('sess-1')
+    })
+    await screen.findByRole('heading', { name: /questionnaire complete/i })
+  })
+
   it('associates scale group with question text', async () => {
     vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
       session_id: 'sess-1',
@@ -231,8 +288,8 @@ describe('Questionnaire', () => {
     )
     await waitFor(() => {
       expect(
-        screen.getByText(/second research-inspired item/i),
-      ).toBeInTheDocument()
+        document.getElementById('question-text-ri_02'),
+      ).toHaveTextContent(/second research-inspired item/i)
     })
   })
 })
