@@ -1,8 +1,18 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.db import init_db
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -14,6 +24,7 @@ def create_app() -> FastAPI:
             "Research-only, non-diagnostic ASD-trait prescreen prototype. "
             "Does not diagnose autism."
         ),
+        lifespan=lifespan,
     )
     app.add_middleware(
         CORSMiddleware,

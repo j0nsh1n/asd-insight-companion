@@ -21,6 +21,7 @@ backend/.venv/
 htmlcov/
 *.sqlite3
 *.db
+backend/data/
 
 # Node / Vite
 node_modules/
@@ -50,3 +51,11 @@ media/
 
 # Docker
 *.log
+
+# Local-only notes / agent ops (NOT for hackathon submission)
+.local/
+agents.local.md
+AGENTS.local.md
+NOTES_LOCAL.md
+notes.md
+NOTES.md
