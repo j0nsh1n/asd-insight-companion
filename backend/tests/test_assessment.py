@@ -356,3 +356,78 @@ def test_double_complete_409(client: TestClient) -> None:
     )
     assert blocked.status_code == 409
     assert blocked.json()["detail"] == "questionnaire_already_complete"
+
+
+def test_concurrent_answer_and_complete_score_matches_responses(
+    client: TestClient,
+) -> None:
+    """Concurrent completes + answer upserts must not desync stored score."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    from app.models.assessment import StoredQuestionResponse
+    from app.services.scoring import compute_questionnaire_scores
+
+    sid = _to_intake(client)
+    bank = get_question_bank()
+    for item in bank.items:
+        r = client.post(
+            "/api/v1/assessment/question-response",
+            json={"session_id": sid, **_metrics(item.id, answer=2)},
+        )
+        assert r.status_code == 200, r.text
+
+    n_writers = 4
+
+    def post_complete() -> int:
+        return client.post(
+            "/api/v1/assessment/questionnaire/complete",
+            json={"session_id": sid},
+        ).status_code
+
+    def post_answer(i: int) -> int:
+        item = bank.items[i % len(bank.items)]
+        # Slightly different metrics so upserts are real writes.
+        payload = {
+            **_metrics(item.id, answer=2 + (i % 2)),
+            "answer_change_count": i,
+        }
+        return client.post(
+            "/api/v1/assessment/question-response",
+            json={"session_id": sid, **payload},
+        ).status_code
+
+    with ThreadPoolExecutor(max_workers=n_writers * 2) as pool:
+        complete_futs = [pool.submit(post_complete) for _ in range(n_writers)]
+        answer_futs = [pool.submit(post_answer, i) for i in range(n_writers)]
+        complete_codes = [f.result() for f in as_completed(complete_futs)]
+        answer_codes = [f.result() for f in as_completed(answer_futs)]
+
+    assert complete_codes.count(200) == 1, complete_codes
+    assert complete_codes.count(409) == n_writers - 1, complete_codes
+    assert all(c in (200, 409) for c in answer_codes), answer_codes
+
+    session = client.get(f"/api/v1/sessions/{sid}").json()
+    assert session["stage"] == "questionnaire_complete"
+    stored_score = session["questionnaire"]["score"]
+    assert stored_score is not None
+
+    progress = client.get(f"/api/v1/assessment/questionnaire/progress/{sid}")
+    assert progress.status_code == 200
+    answered_raw = progress.json()["answered"]
+    answered = {
+        qid: StoredQuestionResponse.model_validate(row)
+        for qid, row in answered_raw.items()
+    }
+    items = {item.id: item for item in bank.items}
+    scale = sorted(o.value for o in bank.scale)
+    recomputed, _ = compute_questionnaire_scores(
+        [item.id for item in bank.items if item.required],
+        items,
+        answered,
+        scale[0],
+        scale[-1],
+    )
+    assert stored_score == recomputed, (
+        f"stored questionnaire_score {stored_score} != recomputed {recomputed} "
+        f"from question_responses (late answer after complete?)"
+    )

@@ -9,17 +9,27 @@ from typing import Any
 
 from app.models.assessment import QuestionBankPublic, QuestionItem, ScaleOption
 
-# backend/app/services -> repo root is parents[3]
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_SHARED_BANK_PATH = _REPO_ROOT / "shared" / "question_bank.json"
-# Fallback for older layouts (tests / accidental moves).
-_LEGACY_BANK_PATH = Path(__file__).resolve().parents[1] / "data" / "question_bank.json"
+
+def _bank_candidates() -> list[Path]:
+    """Resolve bank path for monorepo (local) and Docker layouts.
+
+    Local:  <repo>/backend/app/services/this.py → parents[3]/shared
+    Docker: /app/app/services/this.py → parents[2]/shared  (WORKDIR /app)
+    """
+    here = Path(__file__).resolve()
+    return [
+        here.parents[3] / "shared" / "question_bank.json",
+        here.parents[2] / "shared" / "question_bank.json",
+        here.parents[1] / "data" / "question_bank.json",
+    ]
 
 
 def _bank_path() -> Path:
-    if _SHARED_BANK_PATH.is_file():
-        return _SHARED_BANK_PATH
-    return _LEGACY_BANK_PATH
+    for path in _bank_candidates():
+        if path.is_file():
+            return path
+    # Prefer shared monorepo path for error messages.
+    return _bank_candidates()[0]
 
 
 @lru_cache
