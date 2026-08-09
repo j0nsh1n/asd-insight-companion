@@ -119,6 +119,8 @@ class QuestionnaireSummary(BaseModel):
     score: int | None = None
     item_count: int | None = None
     bank_id: str | None = None
+    instrument_version: str | None = None
+    subscale_scores: dict[str, int] | None = None
     timing: QuestionnaireTimingSummary | None = None
 
 

@@ -40,12 +40,14 @@ class QuestionItem(BaseModel):
     text: str
     required: bool = True
     reverse_scored: bool = False
+    category: str = "general"
 
 
 class QuestionBankPublic(BaseModel):
-    """Question bank metadata and items (no answers)."""
+    """Question bank metadata and items (no answers). Loaded from JSON."""
 
     bank_id: str
+    instrument_version: str
     label: str
     scale: list[ScaleOption]
     items: list[QuestionItem]

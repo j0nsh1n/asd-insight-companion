@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -52,12 +53,14 @@ def test_bank_available(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["bank_id"]
+    assert body["instrument_version"] == "placeholder-v1"
     assert body["required_count"] >= 1
-    assert (
-        "not an official" in body["label"].lower()
-        or "research" in body["label"].lower()
-    )
+    assert "placeholder" in body["label"].lower() or "research" in body["label"].lower()
     assert len(body["items"]) == body["required_count"]
+    assert all(item.get("category") for item in body["items"])
+    blob = json.dumps(body).lower()
+    assert "aq-10" not in blob
+    assert "autism spectrum quotient" not in blob
 
 
 def test_response_rejected_before_intake(client: TestClient) -> None:
@@ -121,22 +124,27 @@ def test_happy_path_complete_and_score(client: TestClient) -> None:
     assert body["questionnaire"]["score"] is not None
     assert body["questionnaire"]["item_count"] == bank.required_count
     assert body["questionnaire"]["bank_id"] == bank.bank_id
+    assert body["questionnaire"]["instrument_version"] == bank.instrument_version
+    assert body["questionnaire"]["subscale_scores"]
     assert body["questionnaire"]["timing"]["item_count"] == bank.required_count
     assert (
         body["questionnaire"]["timing"]["total_answer_changes"] == bank.required_count
     )
 
     # Reverse-scored items: answer 2 on 1-4 scale -> reverse = 3
-    # Non-reverse: 2. Score = sum.
+    # Non-reverse: 2. Score = sum; subscales by category.
     scale = [o.value for o in bank.scale]
     smin, smax = min(scale), max(scale)
     expected = 0
+    expected_subs: dict[str, int] = {}
     for item in bank.items:
         val = 2
         if item.reverse_scored:
             val = smin + smax - val
         expected += val
+        expected_subs[item.category] = expected_subs.get(item.category, 0) + val
     assert body["questionnaire"]["score"] == expected
+    assert body["questionnaire"]["subscale_scores"] == expected_subs
 
 
 def test_incomplete_complete_rejected(client: TestClient) -> None:

@@ -43,18 +43,37 @@ def questionnaire_summary_from_mapping(
     score = mapping.get("questionnaire_score")
     item_count = mapping.get("questionnaire_item_count")
     bank_id = mapping.get("questionnaire_bank_id")
+    instrument_version = mapping.get("questionnaire_instrument_version")
+    subscales_raw = mapping.get("questionnaire_subscale_scores")
     timing_raw = mapping.get("questionnaire_timing_summary")
-    if not any([started, completed, score is not None, timing_raw, bank_id]):
+    if not any(
+        [
+            started,
+            completed,
+            score is not None,
+            timing_raw,
+            bank_id,
+            instrument_version,
+            subscales_raw,
+        ]
+    ):
         return None
     timing = None
     if timing_raw:
         timing = QuestionnaireTimingSummary.model_validate(json.loads(str(timing_raw)))
+    subscales = None
+    if subscales_raw:
+        parsed = json.loads(str(subscales_raw))
+        if isinstance(parsed, dict):
+            subscales = {str(k): int(v) for k, v in parsed.items()}
     return QuestionnaireSummary(
         started_at=cast(str | None, started),
         completed_at=cast(str | None, completed),
         score=int(score) if score is not None else None,
         item_count=int(item_count) if item_count is not None else None,
         bank_id=cast(str | None, bank_id),
+        instrument_version=cast(str | None, instrument_version),
+        subscale_scores=subscales,
         timing=timing,
     )
 

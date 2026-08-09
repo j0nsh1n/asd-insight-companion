@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import UTC, datetime
 from typing import cast
@@ -26,8 +27,8 @@ from app.services.question_bank import (
     get_item_map,
     get_question_bank,
     get_scale_values,
-    reverse_score,
 )
+from app.services.scoring import compute_questionnaire_scores
 
 
 def _utc_now() -> str:
@@ -263,18 +264,15 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
         if missing:
             raise HTTPException(status_code=400, detail="questionnaire_incomplete")
 
-        score = 0
+        score, subscales = compute_questionnaire_scores(
+            required_ids, items, answered, scale_min, scale_max
+        )
         total_time = 0
         total_ttf = 0
         total_changes = 0
         n = len(required_ids)
         for qid in required_ids:
             resp = answered[qid]
-            item = items[qid]
-            val = resp.answer_value
-            if item.reverse_scored:
-                val = reverse_score(val, scale_min, scale_max)
-            score += val
             total_time += resp.total_time_on_question_ms
             total_ttf += resp.time_to_first_interaction_ms
             total_changes += resp.answer_change_count
@@ -287,6 +285,7 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
             total_answer_changes=total_changes,
         )
         timing_json = timing.model_dump_json()
+        subscales_json = json.dumps(subscales, sort_keys=True)
 
         cur = conn.execute(
             """
@@ -298,6 +297,8 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
                 questionnaire_item_count = ?,
                 questionnaire_timing_summary = ?,
                 questionnaire_bank_id = ?,
+                questionnaire_instrument_version = ?,
+                questionnaire_subscale_scores = ?,
                 questionnaire_started_at = COALESCE(questionnaire_started_at, ?)
             WHERE id = ? AND stage IN (?, ?)
             """,
@@ -309,6 +310,8 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
                 n,
                 timing_json,
                 bank.bank_id,
+                bank.instrument_version,
+                subscales_json,
                 now,
                 body.session_id,
                 SessionStage.INTAKE_COMPLETE.value,

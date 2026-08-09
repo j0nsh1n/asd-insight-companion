@@ -26,7 +26,7 @@ _ERRORS = {
 
 @router.get("/questionnaire", response_model=QuestionBankPublic)
 def get_questionnaire_bank() -> QuestionBankPublic:
-    """Return the configurable research-inspired question bank."""
+    """Return the swappable self-report question bank from shared JSON."""
     return get_question_bank()
 
 

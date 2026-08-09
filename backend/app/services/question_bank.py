@@ -1,4 +1,4 @@
-"""Load the configurable research-inspired question bank."""
+"""Load the swappable self-report question bank from shared/question_bank.json."""
 
 from __future__ import annotations
 
@@ -9,11 +9,17 @@ from typing import Any
 
 from app.models.assessment import QuestionBankPublic, QuestionItem, ScaleOption
 
-_DEFAULT_BANK_PATH = Path(__file__).resolve().parents[1] / "data" / "question_bank.json"
+# backend/app/services -> repo root is parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_SHARED_BANK_PATH = _REPO_ROOT / "shared" / "question_bank.json"
+# Fallback for older layouts (tests / accidental moves).
+_LEGACY_BANK_PATH = Path(__file__).resolve().parents[1] / "data" / "question_bank.json"
 
 
 def _bank_path() -> Path:
-    return _DEFAULT_BANK_PATH
+    if _SHARED_BANK_PATH.is_file():
+        return _SHARED_BANK_PATH
+    return _LEGACY_BANK_PATH
 
 
 @lru_cache
@@ -32,13 +38,17 @@ def clear_bank_cache() -> None:
 
 
 def get_question_bank() -> QuestionBankPublic:
-    """Return the public question bank (items + scale + label)."""
+    """Return the public question bank (items + scale + version)."""
     data = _raw_bank()
     items = [QuestionItem.model_validate(item) for item in data["items"]]
     scale = [ScaleOption.model_validate(opt) for opt in data["scale"]]
     required = sum(1 for item in items if item.required)
+    instrument_version = str(
+        data.get("instrument_version") or data.get("bank_id") or "unknown"
+    )
     return QuestionBankPublic(
-        bank_id=str(data["bank_id"]),
+        bank_id=str(data.get("bank_id") or instrument_version),
+        instrument_version=instrument_version,
         label=str(data["label"]),
         scale=scale,
         items=items,
@@ -53,7 +63,7 @@ def get_item_map() -> dict[str, QuestionItem]:
 
 
 def get_scale_values() -> set[int]:
-    """Allowed Likert values for answers."""
+    """Allowed response values for answers."""
     return {opt.value for opt in get_question_bank().scale}
 
 

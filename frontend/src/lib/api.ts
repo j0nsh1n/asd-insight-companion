@@ -25,6 +25,8 @@ export type QuestionnaireSummary = {
   score: number | null
   item_count: number | null
   bank_id: string | null
+  instrument_version: string | null
+  subscale_scores: Record<string, number> | null
   timing: {
     item_count: number
     total_time_ms: number
@@ -74,10 +76,12 @@ export type QuestionItem = {
   text: string
   required: boolean
   reverse_scored: boolean
+  category: string
 }
 
 export type QuestionBank = {
   bank_id: string
+  instrument_version: string
   label: string
   scale: ScaleOption[]
   items: QuestionItem[]

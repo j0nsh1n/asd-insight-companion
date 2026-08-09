@@ -299,11 +299,20 @@ export function Questionnaire({
 
   return (
     <section className="panel" aria-labelledby="q-title">
-      <h2 id="q-title">Questionnaire</h2>
+      <h2 id="q-title">Self-report questionnaire</h2>
+      <aside
+        className="placeholder-instrument-banner"
+        role="note"
+        aria-label="Placeholder instrument notice"
+      >
+        Placeholder questionnaire for development purposes only. Not a validated
+        clinical instrument.
+      </aside>
       <p className="muted bank-label">{bank.label}</p>
       <p className="muted">
-        Adults 18+. One item at a time. Timing metrics are recorded for research
-        only.
+        Adults 18+. Research prescreening items, one at a time. Timing metadata
+        (time to first response, total time on question, answer changes) is
+        recorded for research only.
       </p>
 
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
