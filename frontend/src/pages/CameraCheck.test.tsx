@@ -16,15 +16,30 @@ vi.mock('../lib/camera', async () => {
   }
 })
 
+function makeStream(): MediaStream {
+  const track = { kind: 'video', stop: vi.fn() } as unknown as MediaStreamTrack
+  return {
+    getTracks: () => [track],
+    getAudioTracks: () => [],
+    getVideoTracks: () => [track],
+  } as unknown as MediaStream
+}
+
 describe('CameraCheck', () => {
   beforeEach(() => {
     vi.mocked(camera.requestVideoOnlyStream).mockReset()
     vi.mocked(camera.stopMediaStream).mockReset()
     vi.mocked(camera.assertVideoOnly).mockReset()
+    HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('does not call getUserMedia on mount (only after Enable)', () => {
+    render(<CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />)
+    expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
   })
 
   it('shows privacy note that video is not uploaded', () => {
@@ -38,12 +53,17 @@ describe('CameraCheck', () => {
   it('shows permission denied fallback', async () => {
     const user = userEvent.setup()
     vi.mocked(camera.requestVideoOnlyStream).mockRejectedValue(
-      new camera.CameraError('permission_denied', 'Camera permission was denied.'),
+      new camera.CameraError(
+        'permission_denied',
+        'Camera permission was denied.',
+      ),
     )
     render(<CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />)
     await user.click(screen.getByRole('button', { name: /enable camera/i }))
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/permission was denied/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /permission was denied/i,
+      )
     })
     expect(
       screen.getByRole('button', { name: /continue without camera/i }),
@@ -53,15 +73,8 @@ describe('CameraCheck', () => {
   it('stops stream on cancel', async () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
-    const stream = {
-      getTracks: () => [],
-      getAudioTracks: () => [],
-      getVideoTracks: () => [],
-    } as unknown as MediaStream
+    const stream = makeStream()
     vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
-
-    // Mock video play
-    HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
 
     render(<CameraCheck onBack={onBack} onComplete={vi.fn()} />)
     await user.click(screen.getByRole('button', { name: /enable camera/i }))
@@ -73,5 +86,52 @@ describe('CameraCheck', () => {
     await user.click(screen.getByRole('button', { name: /cancel/i }))
     expect(camera.stopMediaStream).toHaveBeenCalled()
     expect(onBack).toHaveBeenCalled()
+  })
+
+  it('stops every track when unmounting while preview is live', async () => {
+    const user = userEvent.setup()
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+
+    const { unmount } = render(
+      <CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />,
+    )
+    await user.click(screen.getByRole('button', { name: /enable camera/i }))
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /continue \(stop camera\)/i }),
+      ).toBeInTheDocument()
+    })
+    // Live preview holds streamRef; unmount cleanup must stop it.
+    vi.mocked(camera.stopMediaStream).mockClear()
+    unmount()
+    expect(camera.stopMediaStream).toHaveBeenCalledWith(stream)
+  })
+
+  it('stops the stream if unmounted while getUserMedia is still pending', async () => {
+    const user = userEvent.setup()
+    let resolveStream!: (s: MediaStream) => void
+    const pending = new Promise<MediaStream>((resolve) => {
+      resolveStream = resolve
+    })
+    vi.mocked(camera.requestVideoOnlyStream).mockReturnValue(pending)
+
+    const { unmount } = render(
+      <CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />,
+    )
+    await user.click(screen.getByRole('button', { name: /enable camera/i }))
+    expect(camera.requestVideoOnlyStream).toHaveBeenCalledTimes(1)
+
+    unmount()
+
+    const lateStream = makeStream()
+    resolveStream(lateStream)
+    await waitFor(() => {
+      expect(camera.stopMediaStream).toHaveBeenCalledWith(lateStream)
+    })
+    // Must not leave a live orphan: stop was applied to the resolved stream.
+    expect(
+      vi.mocked(camera.stopMediaStream).mock.calls.some((c) => c[0] === lateStream),
+    ).toBe(true)
   })
 })

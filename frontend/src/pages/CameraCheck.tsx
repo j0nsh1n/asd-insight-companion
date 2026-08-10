@@ -24,6 +24,10 @@ type Status =
 export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  /** False after unmount so late getUserMedia results are discarded and stopped. */
+  const mountedRef = useRef(true)
+  /** Bumped on each start/cancel so superseded in-flight requests are abandoned. */
+  const requestGenRef = useRef(0)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
   const releaseCamera = useCallback(() => {
@@ -37,17 +41,30 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
 
   // Always stop tracks on unmount (navigation / leave step).
   useEffect(() => {
+    mountedRef.current = true
     return () => {
+      mountedRef.current = false
+      requestGenRef.current += 1
       releaseCamera()
     }
   }, [releaseCamera])
 
   const startCamera = async () => {
     releaseCamera()
+    const gen = ++requestGenRef.current
     setStatus({ kind: 'requesting' })
     try {
       const stream = await requestVideoOnlyStream()
+      // Unmounted or superseded (cancel / newer Enable) — stop immediately.
+      if (!mountedRef.current || gen !== requestGenRef.current) {
+        stopMediaStream(stream)
+        return
+      }
       assertVideoOnly(stream)
+      if (!mountedRef.current || gen !== requestGenRef.current) {
+        stopMediaStream(stream)
+        return
+      }
       streamRef.current = stream
       const el = videoRef.current
       if (el) {
@@ -56,8 +73,17 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
           // Autoplay policies: still show frame once track is live.
         })
       }
+      if (!mountedRef.current || gen !== requestGenRef.current) {
+        stopMediaStream(stream)
+        streamRef.current = null
+        if (el) el.srcObject = null
+        return
+      }
       setStatus({ kind: 'preview' })
     } catch (err) {
+      if (!mountedRef.current || gen !== requestGenRef.current) {
+        return
+      }
       releaseCamera()
       if (err instanceof CameraError) {
         setStatus({ kind: 'error', message: err.message, code: err.kind })
@@ -72,12 +98,15 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
   }
 
   const handleCancel = () => {
+    // Abandon any in-flight getUserMedia; late resolve will stop the stream.
+    requestGenRef.current += 1
     releaseCamera()
     setStatus({ kind: 'idle' })
     onBack()
   }
 
   const handleSkipOrDone = () => {
+    requestGenRef.current += 1
     releaseCamera()
     setStatus({ kind: 'idle' })
     onComplete()
@@ -107,7 +136,10 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
           aria-label="Local camera preview"
         />
         {status.kind !== 'preview' && (
-          <div className="camera-preview-placeholder" aria-hidden={status.kind === 'requesting'}>
+          <div
+            className="camera-preview-placeholder"
+            aria-hidden={status.kind === 'requesting'}
+          >
             {status.kind === 'requesting'
               ? 'Requesting camera…'
               : 'Camera preview off'}
@@ -140,12 +172,20 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
           </button>
         )}
         {status.kind === 'preview' && (
-          <button type="button" className="btn primary" onClick={handleSkipOrDone}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={handleSkipOrDone}
+          >
             Continue (stop camera)
           </button>
         )}
         {status.kind === 'error' && (
-          <button type="button" className="btn primary" onClick={handleSkipOrDone}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={handleSkipOrDone}
+          >
             Continue without camera
           </button>
         )}

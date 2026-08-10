@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Local camera check after the questionnaire: browser preview only, with
+  `audio` never requested. Video stays in the tab — nothing is uploaded or
+  stored on the server. Participants can continue without camera if access is
+  denied or unavailable. Streams stop on cancel, continue, and when leaving
+  the step.
 - Timed questionnaire stage after intake: one item at a time, progress
   indicator, and a Back control. Items cannot be skipped and the questionnaire
   is unreachable until consent and intake are both complete.
