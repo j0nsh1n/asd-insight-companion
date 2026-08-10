@@ -2,7 +2,7 @@
 
 ## Current State
 
-Branch `feat/phase-3a-camera-preview` @ `4d5d5f2`. Based on Phase 2 work; Phase 3A adds a
+Branch `feat/phase-3b-face-quality` @ `4d5d5f2`. Based on Phase 2 work; Phase 3A adds a
 **local video-only** camera preview after questionnaire complete.
 
 Gates green as of last full run (Phase 3A + prior):
@@ -12,8 +12,8 @@ Gates green as of last full run (Phase 3A + prior):
 | Backend `ruff` / `mypy` / `pytest` | pass (41 tests) |
 | Frontend `oxlint` / `vitest` / `build` | pass (38+ tests with camera) |
 
-Phases 0–2 feature-complete. Phase 3A (local preview) in progress / fix pass.
-**Phase 3B (MediaPipe / quality gate) not started.**
+Phases 0–2 feature-complete. Phase 3A complete. Phase 3B (Face Landmarker quality gate) implemented on this branch.
+**Phase 3C (calibration/stimulus) not started.**
 
 Known gaps: orphan answers if bank version changes mid-dev; score in API but
 not UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
@@ -29,7 +29,8 @@ not UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
                                 → camera → session_done
     frontend/src/pages/         Welcome, Consent, Intake, Questionnaire,
                                 CameraCheck
-    frontend/src/lib/           api.ts, sessionStorage.ts, camera.ts
+    frontend/src/lib/           api.ts, sessionStorage.ts, camera.ts,
+                                cameraQuality.ts, faceLandmarker.ts
     frontend/src/components/    ResearchDisclaimer (sticky)
     scripts/                    run-backend.sh, dev.sh, smoke-phase0.sh
     .github/workflows/          ci.yml, codeql.yml
@@ -59,7 +60,6 @@ not UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
 
 ## Session Handoff
 
-2026-08-11 · `feat/phase-3a-camera-preview` · Phase 3A local camera preview
+2026-08-11 · `feat/phase-3b-face-quality` · Phase 3A local camera preview
 landed; fix pass for unmount-during-permission leak + tests + context/changelog
-refresh. Next: Phase 3B (Face Landmarker / quality gate) only when scoped —
-not started.
+refresh. Next: Phase 3C calibration + stimulus when scoped — not started.

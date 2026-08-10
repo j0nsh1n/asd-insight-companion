@@ -5,6 +5,17 @@ import {
   requestVideoOnlyStream,
   stopMediaStream,
 } from '../lib/camera'
+import {
+  evaluateQuality,
+  meanBrightness,
+  type QualityReport,
+} from '../lib/cameraQuality'
+import {
+  detectFacesForVideo,
+  estimateTrackingConfidence,
+  getFaceLandmarker,
+  type FaceLandmarkerResult,
+} from '../lib/faceLandmarker'
 
 type CameraCheckProps = {
   onBack: () => void
@@ -19,27 +30,39 @@ type Status =
   | { kind: 'error'; message: string; code: string }
 
 /**
- * Phase 3A: local video-only preview. No frames/images/blobs leave the browser.
+ * Phase 3A/3B: local video-only preview + on-device Face Landmarker quality gate.
+ * No frames/images leave the browser.
  */
 export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  /** False after unmount so late getUserMedia results are discarded and stopped. */
   const mountedRef = useRef(true)
-  /** Bumped on each start/cancel so superseded in-flight requests are abandoned. */
   const requestGenRef = useRef(0)
+  const rafRef = useRef<number>(0)
+  const lastTsRef = useRef(-1)
+  const stableFramesRef = useRef(0)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [landmarkerReady, setLandmarkerReady] = useState(false)
+  const [landmarkerError, setLandmarkerError] = useState<string | null>(null)
+  const [quality, setQuality] = useState<QualityReport | null>(null)
 
   const releaseCamera = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+    }
+    lastTsRef.current = -1
+    stableFramesRef.current = 0
     stopMediaStream(streamRef.current)
     streamRef.current = null
     const el = videoRef.current
     if (el) {
       el.srcObject = null
     }
+    setQuality(null)
   }, [])
 
-  // Always stop tracks on unmount (navigation / leave step).
   useEffect(() => {
     mountedRef.current = true
     return () => {
@@ -49,13 +72,116 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
     }
   }, [releaseCamera])
 
+  // Warm Face Landmarker (wasm + model) once; failures are non-fatal for skip path.
+  useEffect(() => {
+    let cancelled = false
+    getFaceLandmarker()
+      .then(() => {
+        if (!cancelled) {
+          setLandmarkerReady(true)
+          setLandmarkerError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setLandmarkerReady(false)
+          setLandmarkerError(
+            err instanceof Error
+              ? err.message
+              : 'Face landmarker failed to load',
+          )
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const sampleBrightness = (video: HTMLVideoElement): number => {
+    const w = 64
+    const h = 48
+    let canvas = sampleCanvasRef.current
+    if (!canvas) {
+      canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      sampleCanvasRef.current = canvas
+    }
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx || video.videoWidth === 0) return 0
+    ctx.drawImage(video, 0, 0, w, h)
+    const img = ctx.getImageData(0, 0, w, h)
+    return meanBrightness(img.data)
+  }
+
+  const runQualityLoop = useCallback(() => {
+    const tick = async () => {
+      if (!mountedRef.current) return
+      const video = videoRef.current
+      const stream = streamRef.current
+      if (!video || !stream || video.readyState < 2) {
+        rafRef.current = requestAnimationFrame(() => {
+          void tick()
+        })
+        return
+      }
+
+      try {
+        const landmarker = await getFaceLandmarker()
+        if (!mountedRef.current || !streamRef.current) return
+
+        let ts = performance.now()
+        if (ts <= lastTsRef.current) {
+          ts = lastTsRef.current + 1
+        }
+        lastTsRef.current = ts
+
+        const result: FaceLandmarkerResult = detectFacesForVideo(
+          landmarker,
+          video,
+          ts,
+        )
+        const faces = result.faceLandmarks ?? []
+        if (faces.length === 1) {
+          stableFramesRef.current += 1
+        } else {
+          stableFramesRef.current = 0
+        }
+
+        const brightness = sampleBrightness(video)
+        const conf = estimateTrackingConfidence(result)
+        const report = evaluateQuality({
+          faceLandmarksList: faces.map((face) =>
+            face.map((p) => ({ x: p.x, y: p.y, z: p.z })),
+          ),
+          brightness,
+          trackingConfidence: conf,
+          stableSingleFaceFrames: stableFramesRef.current,
+        })
+        if (mountedRef.current) {
+          setQuality(report)
+        }
+      } catch {
+        // Keep preview; quality UI will show landmarker error separately.
+      }
+
+      if (mountedRef.current && streamRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          void tick()
+        })
+      }
+    }
+    rafRef.current = requestAnimationFrame(() => {
+      void tick()
+    })
+  }, [])
+
   const startCamera = async () => {
     releaseCamera()
     const gen = ++requestGenRef.current
     setStatus({ kind: 'requesting' })
     try {
       const stream = await requestVideoOnlyStream()
-      // Unmounted or superseded (cancel / newer Enable) — stop immediately.
       if (!mountedRef.current || gen !== requestGenRef.current) {
         stopMediaStream(stream)
         return
@@ -69,9 +195,7 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
       const el = videoRef.current
       if (el) {
         el.srcObject = stream
-        await el.play().catch(() => {
-          // Autoplay policies: still show frame once track is live.
-        })
+        await el.play().catch(() => {})
       }
       if (!mountedRef.current || gen !== requestGenRef.current) {
         stopMediaStream(stream)
@@ -80,6 +204,7 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
         return
       }
       setStatus({ kind: 'preview' })
+      runQualityLoop()
     } catch (err) {
       if (!mountedRef.current || gen !== requestGenRef.current) {
         return
@@ -98,7 +223,6 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
   }
 
   const handleCancel = () => {
-    // Abandon any in-flight getUserMedia; late resolve will stop the stream.
     requestGenRef.current += 1
     releaseCamera()
     setStatus({ kind: 'idle' })
@@ -112,17 +236,19 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
     onComplete()
   }
 
+  const gatePass = quality?.pass === true
+  const canContinueWithCamera = status.kind === 'preview' && gatePass
+
   return (
     <section className="panel" aria-labelledby="camera-title">
-      <h2 id="camera-title">Camera check</h2>
+      <h2 id="camera-title">Camera quality check</h2>
       <p className="muted">
-        Research prototype only. Video stays in this browser for a local preview
-        — it is not uploaded or stored on the server.
+        Research prototype only. Video and face analysis stay in this browser —
+        nothing is uploaded or stored on the server.
       </p>
       <aside className="privacy-camera-note" role="note">
-        <strong>Privacy:</strong> getUserMedia is requested with{' '}
-        <code>audio: false</code>. Preview uses a local{' '}
-        <code>MediaStream</code> only. No video, images, or frame data are sent
+        <strong>Privacy:</strong> getUserMedia uses <code>audio: false</code>.
+        Face Landmarker runs on-device. No video, images, or frame data are sent
         in API requests.
       </aside>
 
@@ -147,12 +273,57 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
         )}
       </div>
 
+      {status.kind === 'preview' && (
+        <div className="quality-panel" aria-live="polite">
+          <h3 className="quality-heading">Quality gate</h3>
+          {landmarkerError && (
+            <p className="status-error" role="alert">
+              Face landmarker unavailable: {landmarkerError}. You can continue
+              without camera.
+            </p>
+          )}
+          {!landmarkerReady && !landmarkerError && (
+            <p className="muted">Loading face landmarker…</p>
+          )}
+          {quality && (
+            <>
+              <p className="muted">
+                Faces:{' '}
+                <strong>
+                  {quality.faceCountStatus === 'zero'
+                    ? 'none'
+                    : quality.faceCountStatus === 'one'
+                      ? 'one'
+                      : `multiple (${quality.faceCount})`}
+                </strong>
+                {gatePass ? (
+                  <span className="status-ok"> · Ready</span>
+                ) : (
+                  <span className="status-error"> · Adjust position/lighting</span>
+                )}
+              </p>
+              <ul className="quality-checklist">
+                {quality.checks.map((c) => (
+                  <li
+                    key={c.id}
+                    className={c.ok ? 'quality-ok' : 'quality-bad'}
+                  >
+                    <span aria-hidden="true">{c.ok ? '✓' : '✗'}</span> {c.label}:{' '}
+                    {c.detail}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
       {status.kind === 'error' && (
         <div className="camera-fallback" role="alert">
           <p className="status-error">{status.message}</p>
           <p className="muted">
-            You can try again, or continue without camera. Later quality checks
-            will use camera only when available.
+            You can try again, or continue without camera for this research
+            prototype.
           </p>
         </div>
       )}
@@ -175,17 +346,16 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
           <button
             type="button"
             className="btn primary"
+            disabled={!canContinueWithCamera}
             onClick={handleSkipOrDone}
           >
-            Continue (stop camera)
+            {canContinueWithCamera
+              ? 'Continue (stop camera)'
+              : 'Waiting for quality gate…'}
           </button>
         )}
-        {status.kind === 'error' && (
-          <button
-            type="button"
-            className="btn primary"
-            onClick={handleSkipOrDone}
-          >
+        {(status.kind === 'error' || status.kind === 'preview') && (
+          <button type="button" className="btn" onClick={handleSkipOrDone}>
             Continue without camera
           </button>
         )}

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Local camera check after the questionnaire: browser preview only, with
+- On-device MediaPipe Face Landmarker quality gate (face count, visibility,
+  lighting, head pose, tracking stability). Analysis stays in the browser;
+  continue is gated until checks pass (or skip without camera).
   `audio` never requested. Video stays in the tab — nothing is uploaded or
   stored on the server. Participants can continue without camera if access is
   denied or unavailable. Streams stop on cancel, continue, and when leaving

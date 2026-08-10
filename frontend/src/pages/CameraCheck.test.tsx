@@ -16,6 +16,13 @@ vi.mock('../lib/camera', async () => {
   }
 })
 
+vi.mock('../lib/faceLandmarker', () => ({
+  getFaceLandmarker: vi.fn().mockRejectedValue(new Error('offline in tests')),
+  detectFacesForVideo: vi.fn(),
+  estimateTrackingConfidence: vi.fn().mockReturnValue(0),
+  closeFaceLandmarker: vi.fn(),
+}))
+
 function makeStream(): MediaStream {
   const track = { kind: 'video', stop: vi.fn() } as unknown as MediaStreamTrack
   return {
@@ -45,7 +52,7 @@ describe('CameraCheck', () => {
   it('shows privacy note that video is not uploaded', () => {
     render(<CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />)
     expect(
-      screen.getByText(/not uploaded or stored on the server/i),
+      screen.getByText(/nothing is uploaded or stored on the server/i),
     ).toBeInTheDocument()
     expect(screen.getByText(/audio: false/i)).toBeInTheDocument()
   })
@@ -80,7 +87,7 @@ describe('CameraCheck', () => {
     await user.click(screen.getByRole('button', { name: /enable camera/i }))
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /continue \(stop camera\)/i }),
+        screen.getByRole('heading', { name: /quality gate/i }),
       ).toBeInTheDocument()
     })
     await user.click(screen.getByRole('button', { name: /cancel/i }))
@@ -99,10 +106,9 @@ describe('CameraCheck', () => {
     await user.click(screen.getByRole('button', { name: /enable camera/i }))
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /continue \(stop camera\)/i }),
+        screen.getByRole('heading', { name: /quality gate/i }),
       ).toBeInTheDocument()
     })
-    // Live preview holds streamRef; unmount cleanup must stop it.
     vi.mocked(camera.stopMediaStream).mockClear()
     unmount()
     expect(camera.stopMediaStream).toHaveBeenCalledWith(stream)
@@ -129,9 +135,5 @@ describe('CameraCheck', () => {
     await waitFor(() => {
       expect(camera.stopMediaStream).toHaveBeenCalledWith(lateStream)
     })
-    // Must not leave a live orphan: stop was applied to the resolved stream.
-    expect(
-      vi.mocked(camera.stopMediaStream).mock.calls.some((c) => c[0] === lateStream),
-    ).toBe(true)
   })
 })

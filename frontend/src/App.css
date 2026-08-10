@@ -383,3 +383,36 @@
 .camera-fallback {
   margin-bottom: 0.75rem;
 }
+
+.quality-panel {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: #1a222c;
+  border: 1px solid #2a3542;
+  border-radius: 8px;
+}
+
+.quality-heading {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.quality-checklist {
+  margin: 0.5rem 0 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.quality-checklist li {
+  margin-bottom: 0.25rem;
+}
+
+.quality-ok {
+  color: #6dca8d;
+}
+
+.quality-bad {
+  color: #f07178;
+}

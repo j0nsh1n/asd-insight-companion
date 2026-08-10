@@ -184,8 +184,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 3A: local camera
-            preview)
+            Research-only ASD-trait prescreen prototype (Phase 3B: camera
+            quality gate)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -247,11 +247,12 @@ function App() {
           <section className="panel" aria-labelledby="done-title">
             <h2 id="done-title">Session checkpoint</h2>
             <p className="status-ok">
-              Camera check finished. Streams were stopped in this browser.
+              Camera quality check finished. Streams were stopped in this
+              browser.
             </p>
             <p className="muted">
-              Later steps (quality landmarker, stimulus) are not enabled yet.
-              No webcam video or images were uploaded to the server.
+              Later steps (calibration, stimulus) are not enabled yet. No webcam
+              video or images were uploaded to the server.
             </p>
             <div className="button-row">
               <button type="button" className="btn" onClick={showWelcome}>
