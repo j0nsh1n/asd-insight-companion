@@ -61,6 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A questionnaire answer saved at the same moment the questionnaire was
+  completed could leave the stored summary disagreeing with the saved answers.
+  Answer and completion now take the same write lock.
+- The backend container image now includes the question bank file, which it
+  previously could not load.
 - Questionnaire answers with malformed, out-of-order, or implausibly long
   timings are now rejected instead of stored.
 - Answers whose timestamps mixed time zones no longer cause a server error.

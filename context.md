@@ -2,7 +2,7 @@
 
 ## Current State
 
-Branch `feat/phase-2-timed-questionnaire` @ `eace547`, 9 commits ahead of
+Branch `feat/phase-2-timed-questionnaire` @ `01f7279`, 16 commits ahead of
 `main`, no upstream — never pushed, so CI has never run on this branch.
 
 All gates green as of 2026-08-10:
@@ -29,16 +29,6 @@ refresh resumed at the exact question with prior answers intact; all three
 summaries recomputed consistently from stored rows.
 
 Known gaps:
-- **Open defect:** concurrent question-response + questionnaire/complete on
-  one session leaves `questionnaire_score` inconsistent with the stored
-  `question_responses` rows, and a late answer returns 200 instead of 409.
-  Reproduced 4/4. `get_connection(immediate=True)` sets
-  `isolation_level = "IMMEDIATE"`, but Python's `sqlite3` opens the
-  transaction at the first DML statement, so the preceding stage-check
-  SELECT runs outside the write lock.
-- Docker cannot load the question bank: compose builds with context
-  `./backend`, the Dockerfile copies only `app`, and the former fallback
-  `backend/app/data/question_bank.json` was deleted.
 - Sessions started under a previous question bank report inflated
   `answered_count` (orphan rows from the old instrument are counted).
 - Score and subscale values are sent in the API payload although the UI never
@@ -138,6 +128,11 @@ SQLite at `backend/data/app.db` (gitignored), overridable via `SQLITE_PATH`.
   18+ only, matching consent copy.
 - **`sqlite3.connect(timeout=30.0)` plus WAL** so concurrent writers wait for
   the lock instead of erroring during atomic stage transitions.
+- **`get_connection(immediate=True)` sets `isolation_level = None` and issues
+  an explicit `BEGIN IMMEDIATE` before yielding.** Relying on
+  `isolation_level = "IMMEDIATE"` alone does not work: Python's `sqlite3`
+  opens the transaction at the first DML statement, leaving the preceding
+  stage-check SELECT outside the write lock.
 - **`docker-compose.yml` and both Dockerfiles have never been built or run** —
   no Docker on the dev machine.
 - **The question bank is a placeholder, not a licensed instrument.** Its
@@ -156,6 +151,8 @@ SQLite at `backend/data/app.db` (gitignored), overridable via `SQLITE_PATH`.
 2026-08-10 · `feat/phase-2-timed-questionnaire` · Ran three full
 questionnaire passes through the real UI and verified persisted telemetry,
 skip prevention, mid-questionnaire resume, and summary consistency; refreshed
-this file and `CHANGELOG.md`. Next: fix the concurrent answer-vs-complete
-score inconsistency listed under Current State, then decide whether to keep
-subscale scoring before Phase 3 (camera) is scoped.
+this file and `CHANGELOG.md`. Re-verified `01f7279` live: concurrent
+answer-vs-complete now leaves score and stored responses consistent 5/5
+(previously 4/4 inconsistent). Next: decide whether to keep subscale scoring,
+then push the branch so CI runs for the first time, before Phase 3 (camera)
+is scoped.
