@@ -16,13 +16,20 @@ import {
   loadSessionId,
   saveSessionId,
 } from './lib/sessionStorage'
+import { CameraCheck } from './pages/CameraCheck'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
-type View = 'welcome' | 'consent' | 'intake' | 'questionnaire'
+type View =
+  | 'welcome'
+  | 'consent'
+  | 'intake'
+  | 'questionnaire'
+  | 'camera'
+  | 'session_done'
 type BackendLabel = 'checking…' | 'ok' | 'error'
 
 function stageToView(stage: SessionStage): View {
@@ -30,11 +37,12 @@ function stageToView(stage: SessionStage): View {
   if (stage === 'consented') return 'intake'
   if (
     stage === 'intake_complete' ||
-    stage === 'questionnaire_in_progress' ||
-    stage === 'questionnaire_complete'
+    stage === 'questionnaire_in_progress'
   ) {
     return 'questionnaire'
   }
+  // After questionnaire: local camera check (Phase 3A), then session done stub.
+  if (stage === 'questionnaire_complete') return 'camera'
   return 'welcome'
 }
 
@@ -64,7 +72,13 @@ function App() {
   const applySession = useCallback((next: SessionResponse) => {
     const stored = saveSessionId(next.id)
     setSession(next)
-    setView(stageToView(next.stage))
+    setView((prev) => {
+      // Stay on post-camera done screen if user already finished camera check.
+      if (prev === 'session_done' && next.stage === 'questionnaire_complete') {
+        return 'session_done'
+      }
+      return stageToView(next.stage)
+    })
     setHasStoredId(stored)
     setError(null)
   }, [])
@@ -170,8 +184,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 2: timed
-            questionnaire)
+            Research-only ASD-trait prescreen prototype (Phase 3A: local camera
+            preview)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -217,6 +231,34 @@ function App() {
             onSessionUpdate={applySession}
             onBack={showWelcome}
           />
+        )}
+
+        {view === 'camera' && session && (
+          <CameraCheck
+            onBack={showWelcome}
+            onComplete={() => {
+              setView('session_done')
+              setError(null)
+            }}
+          />
+        )}
+
+        {view === 'session_done' && (
+          <section className="panel" aria-labelledby="done-title">
+            <h2 id="done-title">Session checkpoint</h2>
+            <p className="status-ok">
+              Camera check finished. Streams were stopped in this browser.
+            </p>
+            <p className="muted">
+              Later steps (quality landmarker, stimulus) are not enabled yet.
+              No webcam video or images were uploaded to the server.
+            </p>
+            <div className="button-row">
+              <button type="button" className="btn" onClick={showWelcome}>
+                Back to welcome
+              </button>
+            </div>
+          </section>
         )}
       </main>
     </div>
