@@ -2,30 +2,48 @@
 
 ## Current State
 
-Branch `feat/phase-1-consent-sessions` @ `a24f4c0`, 5 commits ahead of `main`,
-no upstream — never pushed, so CI has never run on this branch.
+Branch `feat/phase-2-timed-questionnaire` @ `eace547`, 9 commits ahead of
+`main`, no upstream — never pushed, so CI has never run on this branch.
 
-All gates green as of 2026-08-07:
+All gates green as of 2026-08-10:
 
 | Gate | Command | Result |
 |---|---|---|
 | Backend lint | `ruff check .` | pass |
-| Backend format | `ruff format --check .` | pass, 17 files |
-| Backend types | `mypy app` (strict) | pass, 14 files |
-| Backend tests | `pytest -q` | 17 passed |
+| Backend format | `ruff format --check .` | pass, 24 files |
+| Backend types | `mypy app` (strict) | pass, 19 files |
+| Backend tests | `pytest -q` | 41 passed |
 | Frontend lint | `npm run lint` (oxlint, warnings fail) | pass |
-| Frontend tests | `npm test` (vitest) | 20 passed, 5 files |
-| Frontend build | `npm run build` | pass, 201 KB JS / 63 KB gzip |
+| Frontend tests | `npm test` (vitest) | 31 passed, 6 files |
+| Frontend build | `npm run build` | pass |
 
-Phase 0 (skeleton, CI, disclaimer) and Phase 1 (anonymous sessions, consent,
-intake) are complete. Phase 1 was examined and returned FIX-PASS; all four
-blocking items were fixed in `a24f4c0` and re-verified live: 8 concurrent
-consent POSTs now yield 1×200 and 7×409 (previously 4×200).
+Phase 0 (skeleton, CI, disclaimer), Phase 1 (anonymous sessions, consent,
+intake) and Phase 2 (timed questionnaire) are feature-complete. Phase 3
+(camera) has not been started.
+
+Manual QA 2026-08-10 — three full questionnaire runs driven through the real
+UI: telemetry persisted with no NULLs; `answer_change_count` matched the
+click plan exactly (same-option re-clicks correctly counted as 0); required
+items could not be skipped (Next disabled until answered); mid-questionnaire
+refresh resumed at the exact question with prior answers intact; all three
+summaries recomputed consistently from stored rows.
 
 Known gaps:
+- **Open defect:** concurrent question-response + questionnaire/complete on
+  one session leaves `questionnaire_score` inconsistent with the stored
+  `question_responses` rows, and a late answer returns 200 instead of 409.
+  Reproduced 4/4. `get_connection(immediate=True)` sets
+  `isolation_level = "IMMEDIATE"`, but Python's `sqlite3` opens the
+  transaction at the first DML statement, so the preceding stage-check
+  SELECT runs outside the write lock.
+- Docker cannot load the question bank: compose builds with context
+  `./backend`, the Dockerfile copies only `app`, and the former fallback
+  `backend/app/data/question_bank.json` was deleted.
+- Sessions started under a previous question bank report inflated
+  `answered_count` (orphan rows from the old instrument are counted).
+- Score and subscale values are sent in the API payload although the UI never
+  renders them.
 - CI unverified on this branch (never pushed).
-- Docker Compose and both Dockerfiles never built — `docker` is not installed
-  on the dev machine.
 - No withdraw/delete endpoint, no retention or TTL on session rows.
 - Session UUID is a bearer credential; no auth, no rate limiting.
 - SQLite unencrypted at rest.
@@ -37,15 +55,25 @@ Known gaps:
 
     backend/app/main.py            FastAPI factory, CORS, lifespan -> init_db()
     backend/app/core/config.py     Settings; CORS_ORIGINS, SQLITE_PATH
-    backend/app/db.py              Raw sqlite3 helpers, schema DDL, 30s timeout
+    backend/app/db.py              Raw sqlite3 helpers, schema DDL, migrations,
+                                   WAL, 30s timeout, optional IMMEDIATE
     backend/app/models/session.py  Pydantic models; consent + intake validators
+    backend/app/models/assessment.py  Question bank + timed-response models
     backend/app/services/sessions.py  Session lifecycle, atomic stage writes
-    backend/app/api/v1/            health.py, sessions.py, router.py
+    backend/app/services/assessment.py  Answer upsert, progress, completion
+    backend/app/services/question_bank.py  Loads shared/question_bank.json
+    backend/app/services/scoring.py   Total + per-category subscale scoring
+    backend/app/api/v1/            health.py, sessions.py, assessment.py, router.py
     backend/tests/                 conftest.py (tmp-path DB), test_health.py,
-                                   test_sessions.py (incl. concurrency)
+                                   test_sessions.py, test_assessment.py,
+                                   test_scoring.py (incl. concurrency)
     backend/requirements-dev.txt   ruff + mypy; kept out of runtime image
+    shared/question_bank.json      Swappable instrument; placeholder pending
+                                   AQ-10 licensing
     frontend/src/App.tsx           View router: welcome -> consent -> intake
-    frontend/src/pages/            Welcome.tsx, Consent.tsx, Intake.tsx
+                                   -> questionnaire; applies a11y prefs
+    frontend/src/pages/            Welcome.tsx, Consent.tsx, Intake.tsx,
+                                   Questionnaire.tsx
     frontend/src/components/       ResearchDisclaimer.tsx (sticky, persistent)
     frontend/src/lib/              api.ts (typed client), sessionStorage.ts
     frontend/src/test/setup.ts     jest-dom + explicit afterEach(cleanup)
@@ -57,29 +85,29 @@ Known gaps:
 
 ## Domain Model
 
-One entity, one table. No ORM, no migrations — schema is `CREATE TABLE IF NOT
-EXISTS` in `db.py`, applied on startup.
+Two tables. No ORM; schema is `CREATE TABLE IF NOT EXISTS` in `db.py` plus an
+idempotent ADD COLUMN migration list, applied on startup.
 
-    +----------------------------------------------------+
-    | sessions                                           |
-    +----------------------------------------------------+
-    | id                        TEXT  PK   (UUIDv4)      |
-    | stage                     TEXT  NOT NULL           |
-    | created_at                TEXT  NOT NULL  (UTC ISO)|
-    | updated_at                TEXT  NOT NULL  (UTC ISO)|
-    | consent_research_only     INT   NOT NULL  DEFAULT 0|
-    | consent_no_diagnosis      INT   NOT NULL  DEFAULT 0|
-    | consent_data_minimization INT   NOT NULL  DEFAULT 0|
-    | consented_at              TEXT  NULL              |
-    | age_range                 TEXT  NULL              |
-    | language                  TEXT  NULL              |
-    | accessibility_prefs       TEXT  NULL  (JSON blob) |
-    | optional_context          TEXT  NULL  (<=500 char)|
-    +----------------------------------------------------+
+    sessions  1 ------ * question_responses   (FK, PRAGMA foreign_keys = ON)
+
+    sessions: id TEXT PK (UUIDv4) | stage | created_at / updated_at (UTC ISO)
+      consent_research_only / _no_diagnosis / _data_minimization  INT NOT NULL 0
+      consented_at | age_range | language | accessibility_prefs (JSON)
+      optional_context (<=500 char)
+      questionnaire_started_at / _completed_at / _score / _item_count
+      questionnaire_bank_id / _instrument_version
+      questionnaire_subscale_scores (JSON) / _timing_summary (JSON)
+
+    question_responses: PK (session_id, question_id)
+      answer_value | shown_at / answered_at (ISO-8601)
+      time_to_first_interaction_ms | total_time_on_question_ms (<= 1h)
+      answer_change_count | updated_at
 
 Stage machine, enforced server-side and fail-closed:
 
     created --consent(all 3 true)--> consented --intake--> intake_complete
+        --first answer--> questionnaire_in_progress
+        --complete(all required answered)--> questionnaire_complete
 
 No IP address, user agent, or request metadata is stored anywhere. Store is
 SQLite at `backend/data/app.db` (gitignored), overridable via `SQLITE_PATH`.
@@ -98,27 +126,36 @@ SQLite at `backend/data/app.db` (gitignored), overridable via `SQLITE_PATH`.
   layout has no files for — copied verbatim they produced a green no-op CI.
 - **CodeQL has no `autobuild` step** — it is a no-op for Python/TypeScript and
   only adds a failure surface.
-- **`main` sits at the root commit** so PR #1 had real content; a `main` at the
-  branch tip would have made the PR empty.
 - **Commit author emails are the GitHub noreply alias**, rewritten before the
   first push. The repo is public.
-- **Raw `sqlite3`, no SQLAlchemy/Alembic** — deliberate for a single-table
-  prototype.
+- **Raw `sqlite3`, no SQLAlchemy/Alembic** — deliberate for a small-schema
+  prototype; migrations are an idempotent ADD COLUMN list in `db.py`.
 - **Session id lives in `sessionStorage`, not `localStorage`** — survives
   reload, not tab close. The intake UI copy states this.
 - **Consent cannot be undone server-side**; "Back" from intake returns to
   Welcome rather than reopening the consent form.
 - **Age buckets start at `18-24` and `"under-18"` is rejected 422** — adults
   18+ only, matching consent copy.
-- **`sqlite3.connect(timeout=30.0)`** so concurrent writers wait for the lock
-  instead of erroring during atomic stage transitions.
+- **`sqlite3.connect(timeout=30.0)` plus WAL** so concurrent writers wait for
+  the lock instead of erroring during atomic stage transitions.
 - **`docker-compose.yml` and both Dockerfiles have never been built or run** —
   no Docker on the dev machine.
+- **The question bank is a placeholder, not a licensed instrument.** Its
+  `_developer_note` records that AQ-10 (Adult) use awaits written permission
+  from the Autism Research Centre; the note is stripped from the API payload.
+- **The questionnaire score is stored but never rendered.** Removing the
+  on-screen score was a deliberate product decision, not an oversight.
+- **Timing telemetry is client-reported** and validated for shape only
+  (ISO-8601, ordering, 1h ceiling). There is no server-side corroboration.
+- **Naive timestamps are treated as UTC** so mixed naive/aware comparisons
+  cannot raise `TypeError` and escape as HTTP 500.
 - **`hero.png` in `frontend/src/assets/` is unreferenced** Vite leftover.
 
 ## Session Handoff
 
-2026-08-07 · `feat/phase-1-consent-sessions` · Adopted the governance files
-(`context.md`, `CHANGELOG.md`) and added the `.local/` carve-out to agents.md
-policy supremacy. Phase 1 fix pass verified green. Next: push the branch so CI
-runs for the first time, or begin Phase 2 when scoped.
+2026-08-10 · `feat/phase-2-timed-questionnaire` · Ran three full
+questionnaire passes through the real UI and verified persisted telemetry,
+skip prevention, mid-questionnaire resume, and summary consistency; refreshed
+this file and `CHANGELOG.md`. Next: fix the concurrent answer-vs-complete
+score inconsistency listed under Current State, then decide whether to keep
+subscale scoring before Phase 3 (camera) is scoped.
