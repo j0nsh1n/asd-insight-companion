@@ -1,4 +1,4 @@
-"""Load the configurable research-inspired question bank."""
+"""Load the swappable self-report question bank from shared/question_bank.json."""
 
 from __future__ import annotations
 
@@ -9,11 +9,27 @@ from typing import Any
 
 from app.models.assessment import QuestionBankPublic, QuestionItem, ScaleOption
 
-_DEFAULT_BANK_PATH = Path(__file__).resolve().parents[1] / "data" / "question_bank.json"
+
+def _bank_candidates() -> list[Path]:
+    """Resolve bank path for monorepo (local) and Docker layouts.
+
+    Local:  <repo>/backend/app/services/this.py → parents[3]/shared
+    Docker: /app/app/services/this.py → parents[2]/shared  (WORKDIR /app)
+    """
+    here = Path(__file__).resolve()
+    return [
+        here.parents[3] / "shared" / "question_bank.json",
+        here.parents[2] / "shared" / "question_bank.json",
+        here.parents[1] / "data" / "question_bank.json",
+    ]
 
 
 def _bank_path() -> Path:
-    return _DEFAULT_BANK_PATH
+    for path in _bank_candidates():
+        if path.is_file():
+            return path
+    # Prefer shared monorepo path for error messages.
+    return _bank_candidates()[0]
 
 
 @lru_cache
@@ -32,13 +48,17 @@ def clear_bank_cache() -> None:
 
 
 def get_question_bank() -> QuestionBankPublic:
-    """Return the public question bank (items + scale + label)."""
+    """Return the public question bank (items + scale + version)."""
     data = _raw_bank()
     items = [QuestionItem.model_validate(item) for item in data["items"]]
     scale = [ScaleOption.model_validate(opt) for opt in data["scale"]]
     required = sum(1 for item in items if item.required)
+    instrument_version = str(
+        data.get("instrument_version") or data.get("bank_id") or "unknown"
+    )
     return QuestionBankPublic(
-        bank_id=str(data["bank_id"]),
+        bank_id=str(data.get("bank_id") or instrument_version),
+        instrument_version=instrument_version,
         label=str(data["label"]),
         scale=scale,
         items=items,
@@ -53,7 +73,7 @@ def get_item_map() -> dict[str, QuestionItem]:
 
 
 def get_scale_values() -> set[int]:
-    """Allowed Likert values for answers."""
+    """Allowed response values for answers."""
     return {opt.value for opt in get_question_bank().scale}
 
 

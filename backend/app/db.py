@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     questionnaire_score INTEGER,
     questionnaire_item_count INTEGER,
     questionnaire_timing_summary TEXT,
-    questionnaire_bank_id TEXT
+    questionnaire_bank_id TEXT,
+    questionnaire_instrument_version TEXT,
+    questionnaire_subscale_scores TEXT
 );
 
 CREATE TABLE IF NOT EXISTS question_responses (
@@ -54,6 +56,8 @@ _SESSION_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("questionnaire_item_count", "INTEGER"),
     ("questionnaire_timing_summary", "TEXT"),
     ("questionnaire_bank_id", "TEXT"),
+    ("questionnaire_instrument_version", "TEXT"),
+    ("questionnaire_subscale_scores", "TEXT"),
 )
 
 # Wait for locks under concurrent writers.
@@ -95,16 +99,18 @@ def init_db() -> None:
 def get_connection(*, immediate: bool = False) -> Generator[sqlite3.Connection]:
     """Yield a configured SQLite connection; commit on success, always close.
 
-    When ``immediate`` is True, use BEGIN IMMEDIATE so concurrent writers
-    serialize (needed for questionnaire answer vs complete races).
+    When ``immediate`` is True, open an explicit BEGIN IMMEDIATE transaction
+    *before* yield so the stage SELECT and later DML share one write lock.
+    isolation_level is set to None so the driver does not also auto-manage
+    deferred transactions around the first DML only.
     """
     path = get_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=_SQLITE_TIMEOUT_S)
     _configure_connection(conn)
     if immediate:
-        # First statement in this connection acquires a write lock immediately.
-        conn.isolation_level = "IMMEDIATE"
+        conn.isolation_level = None
+        conn.execute("BEGIN IMMEDIATE")
     try:
         yield conn
         conn.commit()

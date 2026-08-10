@@ -16,27 +16,30 @@ vi.mock('../lib/api', async () => {
 })
 
 const bank: api.QuestionBank = {
-  bank_id: 'research-inspired-v1',
-  label: 'Research-inspired self-report items (not an official AQ)',
+  bank_id: 'placeholder-v1',
+  instrument_version: 'placeholder-v1',
+  label: 'Self-report research prescreening items (development placeholder)',
   scale: [
-    { value: 1, label: 'Definitely disagree' },
-    { value: 2, label: 'Slightly disagree' },
-    { value: 3, label: 'Slightly agree' },
-    { value: 4, label: 'Definitely agree' },
+    { value: 1, label: 'Strongly disagree' },
+    { value: 2, label: 'Disagree' },
+    { value: 3, label: 'Agree' },
+    { value: 4, label: 'Strongly agree' },
   ],
   required_count: 2,
   items: [
     {
-      id: 'ri_01',
-      text: 'First research-inspired item.',
+      id: 'ph_01',
+      text: 'I prefer familiar routines over unexpected changes.',
       required: true,
       reverse_scored: false,
+      category: 'routine',
     },
     {
-      id: 'ri_02',
-      text: 'Second research-inspired item.',
+      id: 'ph_02',
+      text: 'I feel comfortable starting conversations with people I do not know well.',
       required: true,
       reverse_scored: true,
+      category: 'social_preference',
     },
   ],
 }
@@ -74,7 +77,7 @@ describe('Questionnaire', () => {
     vi.mocked(api.fetchQuestionBank).mockResolvedValue(bank)
   })
 
-  it('shows research-inspired label and first question', async () => {
+  it('shows placeholder banner and bank-driven first question', async () => {
     vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
       session_id: 'sess-1',
       stage: 'intake_complete',
@@ -82,8 +85,8 @@ describe('Questionnaire', () => {
       required_count: 2,
       answered_count: 0,
       answered: {},
-      next_question_id: 'ri_01',
-      ordered_question_ids: ['ri_01', 'ri_02'],
+      next_question_id: 'ph_01',
+      ordered_question_ids: ['ph_01', 'ph_02'],
       session: baseSession('intake_complete'),
     })
 
@@ -97,9 +100,14 @@ describe('Questionnaire', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/not an official aq/i)).toBeInTheDocument()
       expect(
-        screen.getByText(/first research-inspired item/i),
+        screen.getByText(/placeholder questionnaire for development purposes only/i),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/not a validated clinical instrument/i),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/prefer familiar routines over unexpected changes/i),
       ).toBeInTheDocument()
     })
   })
@@ -111,7 +119,9 @@ describe('Questionnaire', () => {
       completed_at: '2026-01-01T00:10:00+00:00',
       score: 42,
       item_count: 10,
-      bank_id: 'research-inspired-v1',
+      bank_id: 'placeholder-v1',
+      instrument_version: 'placeholder-v1',
+      subscale_scores: { routine: 5 },
       timing: {
         item_count: 10,
         total_time_ms: 1000,
@@ -128,7 +138,7 @@ describe('Questionnaire', () => {
       answered_count: 2,
       answered: {},
       next_question_id: null,
-      ordered_question_ids: ['ri_01', 'ri_02'],
+      ordered_question_ids: ['ph_01', 'ph_02'],
       session: completed,
     })
 
@@ -158,8 +168,8 @@ describe('Questionnaire', () => {
       required_count: 2,
       answered_count: 2,
       answered: {
-        ri_01: {
-          question_id: 'ri_01',
+        ph_01: {
+          question_id: 'ph_01',
           answer_value: 3,
           shown_at: 't0',
           answered_at: 't1',
@@ -167,8 +177,8 @@ describe('Questionnaire', () => {
           total_time_on_question_ms: 100,
           answer_change_count: 0,
         },
-        ri_02: {
-          question_id: 'ri_02',
+        ph_02: {
+          question_id: 'ph_02',
           answer_value: 2,
           shown_at: 't0',
           answered_at: 't1',
@@ -178,7 +188,7 @@ describe('Questionnaire', () => {
         },
       },
       next_question_id: null,
-      ordered_question_ids: ['ri_01', 'ri_02'],
+      ordered_question_ids: ['ph_01', 'ph_02'],
       session: inProgress,
     })
     vi.mocked(api.postQuestionnaireComplete).mockResolvedValue(
@@ -212,8 +222,8 @@ describe('Questionnaire', () => {
       required_count: 2,
       answered_count: 0,
       answered: {},
-      next_question_id: 'ri_01',
-      ordered_question_ids: ['ri_01', 'ri_02'],
+      next_question_id: 'ph_01',
+      ordered_question_ids: ['ph_01', 'ph_02'],
       session: baseSession('intake_complete'),
     })
 
@@ -226,9 +236,9 @@ describe('Questionnaire', () => {
       />,
     )
 
-    await screen.findByText(/first research-inspired item/i)
+    await screen.findByText(/prefer familiar routines/i)
     const group = screen.getByRole('group', {
-      name: /first research-inspired item/i,
+      name: /prefer familiar routines/i,
     })
     expect(group).toBeInTheDocument()
   })
@@ -243,14 +253,14 @@ describe('Questionnaire', () => {
       required_count: 2,
       answered_count: 0,
       answered: {},
-      next_question_id: 'ri_01',
-      ordered_question_ids: ['ri_01', 'ri_02'],
+      next_question_id: 'ph_01',
+      ordered_question_ids: ['ph_01', 'ph_02'],
       session: baseSession('intake_complete'),
     })
     vi.mocked(api.postQuestionResponse).mockResolvedValue({
       session: baseSession('questionnaire_in_progress'),
       response: {
-        question_id: 'ri_01',
+        question_id: 'ph_01',
         answer_value: 3,
         shown_at: 't0',
         answered_at: 't1',
@@ -260,7 +270,7 @@ describe('Questionnaire', () => {
       },
       answered_count: 1,
       required_count: 2,
-      next_question_id: 'ri_02',
+      next_question_id: 'ph_02',
     })
 
     render(
@@ -272,24 +282,24 @@ describe('Questionnaire', () => {
       />,
     )
 
-    await screen.findByText(/first research-inspired item/i)
-    await user.click(screen.getByRole('button', { name: /slightly agree/i }))
+    await screen.findByText(/prefer familiar routines/i)
+    await user.click(screen.getByRole('button', { name: /3\s*agree/i }))
     await user.click(screen.getByRole('button', { name: /^next$/i }))
 
     await waitFor(() => {
       expect(api.postQuestionResponse).toHaveBeenCalled()
     })
     const payload = vi.mocked(api.postQuestionResponse).mock.calls[0][0]
-    expect(payload.question_id).toBe('ri_01')
+    expect(payload.question_id).toBe('ph_01')
     expect(payload.answer_value).toBe(3)
     expect(payload.time_to_first_interaction_ms).toBeGreaterThanOrEqual(0)
     expect(payload.total_time_on_question_ms).toBeGreaterThanOrEqual(
       payload.time_to_first_interaction_ms,
     )
     await waitFor(() => {
-      expect(
-        document.getElementById('question-text-ri_02'),
-      ).toHaveTextContent(/second research-inspired item/i)
+      expect(document.getElementById('question-text-ph_02')).toHaveTextContent(
+        /comfortable starting conversations/i,
+      )
     })
   })
 })

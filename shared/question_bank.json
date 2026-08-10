@@ -1,0 +1,84 @@
+{
+  "_developer_note": "PLACEHOLDER INSTRUMENT — awaiting written permission from the Autism Research Centre to use the licensed AQ-10 (Adult). Replace this file's items with the licensed instrument only after permission is confirmed, and add required citation/acknowledgment per ARC's terms at that time.",
+  "instrument_version": "placeholder-v1",
+  "bank_id": "placeholder-v1",
+  "label": "Self-report research prescreening items (development placeholder)",
+  "scale": [
+    { "value": 1, "label": "Strongly disagree" },
+    { "value": 2, "label": "Disagree" },
+    { "value": 3, "label": "Agree" },
+    { "value": 4, "label": "Strongly agree" }
+  ],
+  "items": [
+    {
+      "id": "ph_01",
+      "text": "I prefer familiar routines over unexpected changes.",
+      "required": true,
+      "reverse_scored": false,
+      "category": "routine"
+    },
+    {
+      "id": "ph_02",
+      "text": "I feel comfortable starting conversations with people I do not know well.",
+      "required": true,
+      "reverse_scored": true,
+      "category": "social_preference"
+    },
+    {
+      "id": "ph_03",
+      "text": "I notice small patterns or details in everyday objects.",
+      "required": true,
+      "reverse_scored": false,
+      "category": "attention_to_detail"
+    },
+    {
+      "id": "ph_04",
+      "text": "I find it easy to keep a casual chat going with several people at once.",
+      "required": true,
+      "reverse_scored": true,
+      "category": "communication_style"
+    },
+    {
+      "id": "ph_05",
+      "text": "Bright lights or loud background noise can make it hard for me to focus.",
+      "required": true,
+      "reverse_scored": false,
+      "category": "sensory_experience"
+    },
+    {
+      "id": "ph_06",
+      "text": "I like switching between tasks without much planning ahead.",
+      "required": true,
+      "reverse_scored": true,
+      "category": "routine"
+    },
+    {
+      "id": "ph_07",
+      "text": "Spending time alone feels more restful to me than large social gatherings.",
+      "required": true,
+      "reverse_scored": false,
+      "category": "social_preference"
+    },
+    {
+      "id": "ph_08",
+      "text": "I usually pick up jokes and indirect remarks without needing extra explanation.",
+      "required": true,
+      "reverse_scored": true,
+      "category": "communication_style"
+    },
+    {
+      "id": "ph_09",
+      "text": "I enjoy organizing information into clear categories or lists.",
+      "required": true,
+      "reverse_scored": false,
+      "category": "attention_to_detail"
+    },
+    {
+      "id": "ph_10",
+      "text": "I can ignore background sounds when I am working on something important.",
+      "required": true,
+      "reverse_scored": true,
+      "category": "sensory_experience"
+    }
+  ]
+}

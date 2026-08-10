@@ -57,8 +57,8 @@ export function Intake({
           </li>
         </ul>
         <p className="muted">
-          When you continue, the next step is a timed research-inspired
-          questionnaire (not an official diagnostic instrument).
+          When you continue, the next step is a timed self-report questionnaire
+          used for research prescreening only.
         </p>
       </section>
     )
