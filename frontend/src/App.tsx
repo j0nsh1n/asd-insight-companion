@@ -11,15 +11,18 @@ import {
   type SessionResponse,
   type SessionStage,
 } from './lib/api'
+import type { LocalFeatureSummary } from './lib/localFeatures'
 import {
   clearSessionId,
   loadSessionId,
   saveSessionId,
 } from './lib/sessionStorage'
+import { Calibration } from './pages/Calibration'
 import { CameraCheck } from './pages/CameraCheck'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
+import { StimulusTask } from './pages/StimulusTask'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
@@ -29,19 +32,18 @@ type View =
   | 'intake'
   | 'questionnaire'
   | 'camera'
+  | 'calibration'
+  | 'stimulus'
   | 'session_done'
 type BackendLabel = 'checking…' | 'ok' | 'error'
 
 function stageToView(stage: SessionStage): View {
   if (stage === 'created') return 'consent'
   if (stage === 'consented') return 'intake'
-  if (
-    stage === 'intake_complete' ||
-    stage === 'questionnaire_in_progress'
-  ) {
+  if (stage === 'intake_complete' || stage === 'questionnaire_in_progress') {
     return 'questionnaire'
   }
-  // After questionnaire: local camera check (Phase 3A), then session done stub.
+  // After questionnaire: camera → calibration → stimulus (client-local steps).
   if (stage === 'questionnaire_complete') return 'camera'
   return 'welcome'
 }
@@ -53,6 +55,8 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasStoredId, setHasStoredId] = useState(false)
+  const [featureSummary, setFeatureSummary] =
+    useState<LocalFeatureSummary | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -73,9 +77,14 @@ function App() {
     const stored = saveSessionId(next.id)
     setSession(next)
     setView((prev) => {
-      // Stay on post-camera done screen if user already finished camera check.
-      if (prev === 'session_done' && next.stage === 'questionnaire_complete') {
-        return 'session_done'
+      // Preserve late client-only steps after questionnaire_complete.
+      if (
+        next.stage === 'questionnaire_complete' &&
+        (prev === 'calibration' ||
+          prev === 'stimulus' ||
+          prev === 'session_done')
+      ) {
+        return prev
       }
       return stageToView(next.stage)
     })
@@ -184,8 +193,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 3B: camera
-            quality gate)
+            Research-only ASD-trait prescreen prototype (Phase 3C: calibration
+            + stimulus)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -237,6 +246,27 @@ function App() {
           <CameraCheck
             onBack={showWelcome}
             onComplete={() => {
+              setView('calibration')
+              setError(null)
+            }}
+          />
+        )}
+
+        {view === 'calibration' && (
+          <Calibration
+            onBack={() => setView('camera')}
+            onComplete={() => {
+              setView('stimulus')
+              setError(null)
+            }}
+          />
+        )}
+
+        {view === 'stimulus' && (
+          <StimulusTask
+            onBack={() => setView('calibration')}
+            onComplete={(summary) => {
+              setFeatureSummary(summary)
               setView('session_done')
               setError(null)
             }}
@@ -245,15 +275,25 @@ function App() {
 
         {view === 'session_done' && (
           <section className="panel" aria-labelledby="done-title">
-            <h2 id="done-title">Session checkpoint</h2>
+            <h2 id="done-title">Session complete (research prototype)</h2>
             <p className="status-ok">
-              Camera quality check finished. Streams were stopped in this
-              browser.
+              Calibration and stimulus steps finished. Webcam streams were
+              stopped in this browser.
             </p>
             <p className="muted">
-              Later steps (calibration, stimulus) are not enabled yet. No webcam
-              video or images were uploaded to the server.
+              No webcam video or images were uploaded. Optional local face
+              sampling is summarized as numbers only for research logging later.
             </p>
+            {featureSummary && (
+              <ul className="summary-list">
+                <li>Local samples: {featureSummary.sample_count}</li>
+                <li>
+                  Single-face fraction:{' '}
+                  {(featureSummary.fraction_single_face * 100).toFixed(0)}%
+                </li>
+                <li>Media uploaded: {String(featureSummary.media_uploaded)}</li>
+              </ul>
+            )}
             <div className="button-row">
               <button type="button" className="btn" onClick={showWelcome}>
                 Back to welcome

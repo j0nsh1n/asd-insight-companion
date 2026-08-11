@@ -416,3 +416,30 @@
 .quality-bad {
   color: #f07178;
 }
+
+.stimulus-video-wrap {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto 1rem;
+  background: #0a0e12;
+  border: 1px solid #2a3542;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.stimulus-video {
+  display: block;
+  width: 100%;
+  max-height: 18rem;
+  background: #000;
+}
+
+.stimulus-cam-thumb {
+  width: 7rem;
+  height: 5.25rem;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #2a3542;
+  margin: 0 0 0.75rem;
+  transform: scaleX(-1);
+}
