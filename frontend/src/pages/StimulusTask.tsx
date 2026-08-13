@@ -24,13 +24,19 @@ import { getStimulusConfig } from '../lib/stimulusConfig'
 type StimulusTaskProps = {
   onBack: () => void
   onComplete: (summary: LocalFeatureSummary) => void
+  /** False when optional camera consent was declined. */
+  cameraAllowed?: boolean
 }
 
 /**
  * Phase 3C: one short video stimulus + optional local webcam feature sampling.
  * Video playback and webcam frames stay in the browser.
  */
-export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
+export function StimulusTask({
+  onBack,
+  onComplete,
+  cameraAllowed = true,
+}: StimulusTaskProps) {
   const config = getStimulusConfig()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const camRef = useRef<HTMLVideoElement | null>(null)
@@ -49,6 +55,7 @@ export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
   const [ended, setEnded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cameraOn, setCameraOn] = useState(false)
+  const [clipFailed, setClipFailed] = useState(false)
 
   const releaseCamera = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -152,10 +159,18 @@ export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
     }
   }
 
+  const failClip = (message: string) => {
+    releaseCamera()
+    setPlaying(false)
+    setClipFailed(true)
+    setError(message)
+  }
+
   const startClip = async () => {
     const el = videoRef.current
     if (!el) return
     setError(null)
+    setClipFailed(false)
     setEnded(false)
     samplesRef.current = []
     startMsRef.current = performance.now()
@@ -165,7 +180,7 @@ export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
       // sampling starts via effect when camera is already on
       if (streamRef.current && camRef.current) startSampling()
     } catch {
-      setError('Could not play the stimulus video. Check network access.')
+      failClip('Could not play the stimulus video. Check network access.')
     }
   }
 
@@ -215,7 +230,7 @@ export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
             if (rafRef.current) cancelAnimationFrame(rafRef.current)
           }}
           onError={() =>
-            setError('Stimulus video failed to load (network or URL).')
+            failClip('Stimulus video failed to load (network or URL).')
           }
         />
       </div>
@@ -256,14 +271,19 @@ export function StimulusTask({ onBack, onComplete }: StimulusTaskProps) {
         >
           Back
         </button>
-        {!cameraOn && (
+        {cameraAllowed && !cameraOn && (
           <button type="button" className="btn" onClick={() => void enableCamera()}>
             Optional: enable camera sampling
           </button>
         )}
-        {!playing && !ended && (
+        {!playing && !ended && !clipFailed && (
           <button type="button" className="btn primary" onClick={() => void startClip()}>
             Play clip
+          </button>
+        )}
+        {clipFailed && (
+          <button type="button" className="btn primary" onClick={finish}>
+            Continue without the clip
           </button>
         )}
         <button

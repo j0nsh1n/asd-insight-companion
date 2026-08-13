@@ -37,11 +37,12 @@ class AccessibilityPrefs(BaseModel):
 
 
 class ConsentRequest(BaseModel):
-    """All flags must be true; incomplete or denied consent fails closed."""
+    """Required flags must all be true; camera_optional is independently declinable."""
 
     research_only: bool
     no_diagnosis: bool
     data_minimization: bool
+    camera_optional: bool = False
 
     @model_validator(mode="after")
     def require_full_consent(self) -> ConsentRequest:
@@ -89,6 +90,7 @@ class ConsentState(BaseModel):
     research_only: bool
     no_diagnosis: bool
     data_minimization: bool
+    camera_optional: bool | None = None
     consented_at: str | None = None
 
 

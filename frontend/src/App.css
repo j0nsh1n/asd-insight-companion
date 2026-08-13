@@ -167,6 +167,12 @@
   margin-top: 0.2rem;
 }
 
+.check-row-optional {
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #2a3542;
+}
+
 .field {
   display: flex;
   flex-direction: column;

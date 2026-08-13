@@ -1,6 +1,7 @@
 /**
  * MediaPipe Face Landmarker loader (browser-local).
- * Model + wasm load from CDN; inference stays on-device.
+ * WASM + model are served from this origin (/mediapipe/, npm postinstall).
+ * Inference stays on-device. Apache-2.0; see public/mediapipe/NOTICE.
  */
 
 import {
@@ -9,11 +10,9 @@ import {
   type FaceLandmarkerResult,
 } from '@mediapipe/tasks-vision'
 
-// Pin wasm path to the installed package version when possible.
-const WASM_VERSION = '0.10.21'
-const WASM_ROOT = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${WASM_VERSION}/wasm`
-const MODEL_URL =
-  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+/** Same-origin paths filled by `npm run vendor:mediapipe` (postinstall). */
+export const WASM_ROOT = '/mediapipe/wasm'
+export const MODEL_URL = '/mediapipe/face_landmarker.task'
 
 let landmarkerPromise: Promise<FaceLandmarker> | null = null
 

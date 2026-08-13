@@ -45,6 +45,7 @@ export type SessionResponse = {
     research_only: boolean
     no_diagnosis: boolean
     data_minimization: boolean
+    camera_optional: boolean | null
     consented_at: string | null
   }
   intake: {
@@ -60,6 +61,7 @@ export type ConsentPayload = {
   research_only: boolean
   no_diagnosis: boolean
   data_minimization: boolean
+  camera_optional: boolean
 }
 
 export type IntakePayload = {

@@ -1,9 +1,31 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import * as api from './lib/api'
+import * as camera from './lib/camera'
 import * as sessionStore from './lib/sessionStorage'
+
+vi.mock('./lib/camera', async () => {
+  const actual = await vi.importActual<typeof import('./lib/camera')>(
+    './lib/camera',
+  )
+  return {
+    ...actual,
+    requestVideoOnlyStream: vi.fn(),
+    stopMediaStream: vi.fn(),
+    assertVideoOnly: vi.fn(),
+  }
+})
+
+vi.mock('./lib/faceLandmarker', () => ({
+  getFaceLandmarker: vi.fn().mockRejectedValue(new Error('offline in tests')),
+  detectFacesForVideo: vi.fn(),
+  estimateTrackingConfidence: vi.fn().mockReturnValue(0),
+  closeFaceLandmarker: vi.fn(),
+  WASM_ROOT: '/mediapipe/wasm',
+  MODEL_URL: '/mediapipe/face_landmarker.task',
+}))
 
 vi.mock('./lib/api', async () => {
   const actual = await vi.importActual<typeof import('./lib/api')>('./lib/api')
@@ -37,6 +59,7 @@ const baseSession = (
     research_only: stage !== 'created',
     no_diagnosis: stage !== 'created',
     data_minimization: stage !== 'created',
+    camera_optional: stage === 'created' ? null : false,
     consented_at: stage === 'created' ? null : '2026-01-01T00:01:00+00:00',
   },
   intake:
@@ -196,5 +219,66 @@ describe('App Phase 1 flow', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(/network down/i)
     })
     expect(sessionStore.loadSessionId()).toBe(prior)
+  })
+
+  it('declined camera consent never calls getUserMedia and still completes', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(
+      baseSession('questionnaire_complete', {
+        consent: {
+          research_only: true,
+          no_diagnosis: true,
+          data_minimization: true,
+          camera_optional: false,
+          consented_at: '2026-01-01T00:01:00+00:00',
+        },
+      }),
+    )
+    vi.mocked(camera.requestVideoOnlyStream).mockReset()
+
+    const { container } = render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /camera quality check/i }),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole('button', { name: /enable camera/i }),
+    ).not.toBeInTheDocument()
+    expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
+
+    await user.click(
+      screen.getByRole('button', { name: /continue without camera/i }),
+    )
+    expect(
+      screen.getByRole('heading', { name: /calibration/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /start with camera/i }),
+    ).not.toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole('button', { name: /skip calibration camera/i }),
+    )
+    expect(
+      screen.getByRole('heading', { name: /short attention clip/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /enable camera sampling/i }),
+    ).not.toBeInTheDocument()
+
+    const clip = container.querySelector('video.stimulus-video')
+    expect(clip).toBeTruthy()
+    fireEvent(clip as HTMLVideoElement, new Event('ended'))
+    await user.click(screen.getByRole('button', { name: /finish task/i }))
+
+    expect(
+      screen.getByRole('heading', { name: /session complete/i }),
+    ).toBeInTheDocument()
+    expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
   })
 })

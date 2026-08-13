@@ -19,7 +19,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     fs: {
-      allow: [rootDir, path.resolve(rootDir, '..')],
+      allow: [rootDir, path.resolve(rootDir, '../shared')],
     },
   },
   test: {

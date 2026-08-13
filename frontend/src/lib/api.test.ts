@@ -69,6 +69,7 @@ describe('session API helpers', () => {
       research_only: false,
       no_diagnosis: false,
       data_minimization: false,
+      camera_optional: null,
       consented_at: null,
     },
     intake: null,
@@ -132,6 +133,7 @@ describe('session API helpers', () => {
         research_only: true,
         no_diagnosis: true,
         data_minimization: true,
+        camera_optional: false,
         consented_at: '2026-01-01T00:01:00+00:00',
       },
     }
@@ -139,6 +141,7 @@ describe('session API helpers', () => {
       research_only: true,
       no_diagnosis: true,
       data_minimization: true,
+      camera_optional: false,
     }
     vi.stubGlobal(
       'fetch',
@@ -174,6 +177,7 @@ describe('session API helpers', () => {
         research_only: true,
         no_diagnosis: true,
         data_minimization: true,
+        camera_optional: false,
       }),
     ).rejects.toThrow('consent_already_recorded')
   })

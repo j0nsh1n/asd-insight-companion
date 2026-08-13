@@ -21,6 +21,8 @@ type CameraCheckProps = {
   onBack: () => void
   /** Called after camera is stopped (continue or skip). */
   onComplete: () => void
+  /** False when optional camera consent was declined. */
+  cameraAllowed?: boolean
 }
 
 type Status =
@@ -33,7 +35,11 @@ type Status =
  * Phase 3A/3B: local video-only preview + on-device Face Landmarker quality gate.
  * No frames/images leave the browser.
  */
-export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
+export function CameraCheck({
+  onBack,
+  onComplete,
+  cameraAllowed = true,
+}: CameraCheckProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -74,6 +80,7 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
 
   // Warm Face Landmarker (wasm + model) once; failures are non-fatal for skip path.
   useEffect(() => {
+    if (!cameraAllowed) return
     let cancelled = false
     getFaceLandmarker()
       .then(() => {
@@ -95,7 +102,7 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [cameraAllowed])
 
   const sampleBrightness = (video: HTMLVideoElement): number => {
     const w = 64
@@ -251,6 +258,12 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
         Face Landmarker runs on-device. No video, images, or frame data are sent
         in API requests.
       </aside>
+      {!cameraAllowed && (
+        <p className="muted">
+          Camera-based measures were declined at consent. You can continue
+          without the camera.
+        </p>
+      )}
 
       <div className="camera-preview-wrap">
         <video
@@ -332,7 +345,7 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
         <button type="button" className="btn" onClick={handleCancel}>
           Cancel
         </button>
-        {status.kind !== 'preview' && (
+        {cameraAllowed && status.kind !== 'preview' && (
           <button
             type="button"
             className="btn primary"
@@ -354,7 +367,9 @@ export function CameraCheck({ onBack, onComplete }: CameraCheckProps) {
               : 'Waiting for quality gate…'}
           </button>
         )}
-        {(status.kind === 'error' || status.kind === 'preview') && (
+        {(status.kind === 'error' ||
+          status.kind === 'preview' ||
+          !cameraAllowed) && (
           <button type="button" className="btn" onClick={handleSkipOrDone}>
             Continue without camera
           </button>

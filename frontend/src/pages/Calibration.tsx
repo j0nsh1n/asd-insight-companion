@@ -18,6 +18,8 @@ import {
 
 type CalibrationProps = {
   allowWithoutCamera?: boolean
+  /** False when optional camera consent was declined. */
+  cameraAllowed?: boolean
   onBack: () => void
   onComplete: () => void
 }
@@ -32,6 +34,7 @@ const HOLD_MS = 3000
  */
 export function Calibration({
   allowWithoutCamera = true,
+  cameraAllowed = true,
   onBack,
   onComplete,
 }: CalibrationProps) {
@@ -238,15 +241,17 @@ export function Calibration({
             <button type="button" className="btn" onClick={onBack}>
               Back
             </button>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={requesting}
-              onClick={() => void enableCamera()}
-            >
-              {requesting ? 'Starting…' : 'Start with camera'}
-            </button>
-            {allowWithoutCamera && (
+            {cameraAllowed && (
+              <button
+                type="button"
+                className="btn primary"
+                disabled={requesting}
+                onClick={() => void enableCamera()}
+              >
+                {requesting ? 'Starting…' : 'Start with camera'}
+              </button>
+            )}
+            {(allowWithoutCamera || !cameraAllowed) && (
               <button type="button" className="btn" onClick={skipWithoutCamera}>
                 Skip calibration camera
               </button>

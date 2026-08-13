@@ -36,6 +36,7 @@ def _create(client: TestClient) -> dict[str, Any]:
 def test_create_session_anonymous(client: TestClient) -> None:
     body = _create(client)
     assert body["consent"]["research_only"] is False
+    assert body["consent"]["camera_optional"] is None
     assert body["consent"]["consented_at"] is None
     assert body["intake"] is None
 
@@ -103,6 +104,7 @@ def test_resume_after_consent_and_intake(client: TestClient) -> None:
     assert body["consent"]["research_only"] is True
     assert body["consent"]["no_diagnosis"] is True
     assert body["consent"]["data_minimization"] is True
+    assert body["consent"]["camera_optional"] is False
     assert body["consent"]["consented_at"]
 
     resumed = client.get(f"/api/v1/sessions/{sid}")
@@ -276,3 +278,41 @@ def test_concurrent_intake_exactly_one_success(client: TestClient) -> None:
     body = final.json()
     assert body["stage"] == "intake_complete"
     assert body["consent"]["consented_at"] == consented_at
+
+
+def test_camera_optional_true_persisted(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    payload = {**FULL_CONSENT, "camera_optional": True}
+    response = client.post(f"/api/v1/sessions/{sid}/consent", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["consent"]["camera_optional"] is True
+    assert body["consent"]["research_only"] is True
+    resumed = client.get(f"/api/v1/sessions/{sid}")
+    assert resumed.json()["consent"]["camera_optional"] is True
+
+
+def test_camera_optional_false_persisted(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    payload = {**FULL_CONSENT, "camera_optional": False}
+    response = client.post(f"/api/v1/sessions/{sid}/consent", json=payload)
+    assert response.status_code == 200
+    assert response.json()["consent"]["camera_optional"] is False
+
+
+def test_camera_optional_does_not_bypass_required_flags(client: TestClient) -> None:
+    session = _create(client)
+    sid = session["id"]
+    incomplete = {
+        "research_only": True,
+        "no_diagnosis": True,
+        "data_minimization": False,
+        "camera_optional": True,
+    }
+    response = client.post(f"/api/v1/sessions/{sid}/consent", json=incomplete)
+    assert response.status_code == 422
+    got = client.get(f"/api/v1/sessions/{sid}")
+    assert got.json()["stage"] == "created"
+    assert got.json()["consent"]["camera_optional"] is None

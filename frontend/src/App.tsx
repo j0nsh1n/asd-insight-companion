@@ -244,6 +244,7 @@ function App() {
 
         {view === 'camera' && session && (
           <CameraCheck
+            cameraAllowed={session.consent.camera_optional === true}
             onBack={showWelcome}
             onComplete={() => {
               setView('calibration')
@@ -254,6 +255,7 @@ function App() {
 
         {view === 'calibration' && (
           <Calibration
+            cameraAllowed={session?.consent.camera_optional === true}
             onBack={() => setView('camera')}
             onComplete={() => {
               setView('stimulus')
@@ -264,6 +266,7 @@ function App() {
 
         {view === 'stimulus' && (
           <StimulusTask
+            cameraAllowed={session?.consent.camera_optional === true}
             onBack={() => setView('calibration')}
             onComplete={(summary) => {
               setFeatureSummary(summary)

@@ -49,6 +49,27 @@ describe('CameraCheck', () => {
     expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
   })
 
+  it('declined consent skips enable and never calls getUserMedia', async () => {
+    const user = userEvent.setup()
+    const onComplete = vi.fn()
+    render(
+      <CameraCheck
+        cameraAllowed={false}
+        onBack={vi.fn()}
+        onComplete={onComplete}
+      />,
+    )
+    expect(
+      screen.queryByRole('button', { name: /enable camera/i }),
+    ).not.toBeInTheDocument()
+    expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
+    await user.click(
+      screen.getByRole('button', { name: /continue without camera/i }),
+    )
+    expect(onComplete).toHaveBeenCalled()
+    expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
+  })
+
   it('shows privacy note that video is not uploaded', () => {
     render(<CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />)
     expect(
