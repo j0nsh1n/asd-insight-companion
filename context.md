@@ -2,7 +2,7 @@
 
 ## Current State
 
-Branch `feat/phase-3c-calibration-stimulus`. Phase 3C (calibration + local
+Branch `feat/phase-3c-calibration-stimulus` @ `2552a31`. Phase 3C (calibration + local
 stimulus sampling) is implemented; this session is the Phase 3C fix pass.
 
 Gates as of 2026-08-13:
@@ -78,7 +78,7 @@ not UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
 
 ## Session Handoff
 
-2026-08-13 · `feat/phase-3c-calibration-stimulus` · Phase 3C fix pass:
+2026-08-13 · `feat/phase-3c-calibration-stimulus` @ `2552a31` · Phase 3C fix pass:
 self-hosted MediaPipe, optional camera consent honored on camera/calibration/
 stimulus, Vite fs.allow narrowed, stimulus load error can continue without
 the clip, changelog/context refreshed. Next: examiner gate. Phase 3D/4 not
