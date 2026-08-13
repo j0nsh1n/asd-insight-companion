@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
@@ -58,5 +58,23 @@ describe('StimulusTaskPage', () => {
     expect(player.tagName).toBe('VIDEO')
     expect(player).toHaveAttribute('src', task.video_file)
     expect(player).toHaveFocus()
+  })
+
+  it('shows an alert when the clip fails to load and skip remains', async () => {
+    const user = userEvent.setup()
+    render(<StimulusTaskPage onBack={vi.fn()} onSkip={vi.fn()} />)
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    const player = document.querySelector('video')
+    expect(player).toBeTruthy()
+    fireEvent.error(player as HTMLVideoElement)
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /the video clip isn't available in this build/i,
+    )
+    expect(
+      screen.getByRole('button', { name: /skip video task/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /^back$/i }),
+    ).toBeInTheDocument()
   })
 })

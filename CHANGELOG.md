@@ -83,6 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- If the attention clip file is missing from this build, the stimulus step
+  now says so and still lets the participant skip.
 - If the attention clip fails to load or play, sampling stops and the
   participant can continue without the clip instead of being stuck with
   Finish task disabled.

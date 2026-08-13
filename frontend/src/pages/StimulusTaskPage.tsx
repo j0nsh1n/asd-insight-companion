@@ -15,6 +15,7 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
   const task = getStimulusTaskManifest()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [started, setStarted] = useState(false)
+  const [clipError, setClipError] = useState(false)
   const [transcript, setTranscript] = useState<string | null>(null)
 
   useEffect(() => {
@@ -56,11 +57,18 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
           captionsSrc={task.captions_file}
           label={task.video_description}
           videoRef={videoRef}
+          onError={() => setClipError(true)}
         />
       ) : (
         <div className="stimulus-video-wrap" aria-hidden="true">
           <div className="camera-preview-placeholder">Video not started</div>
         </div>
+      )}
+
+      {clipError && (
+        <p className="status-error" role="alert">
+          The video clip isn't available in this build. You can skip this step.
+        </p>
       )}
 
       <details className="stimulus-transcript">

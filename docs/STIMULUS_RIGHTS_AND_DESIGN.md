@@ -3,6 +3,12 @@
 Fill this in before any real-participant deployment. Placeholder clip and
 captions in `frontend/public/stimuli/` are **not** study-ready.
 
+## Intent
+
+- source_type: original team recording (placeholder until replaced)
+- intent: research-only, not diagnostic. This stimulus is not a clinical
+  instrument and produces no diagnostic output.
+
 ## Task
 
 | Field | Value |
