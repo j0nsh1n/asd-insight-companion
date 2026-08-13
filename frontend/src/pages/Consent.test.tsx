@@ -28,11 +28,17 @@ describe('Consent', () => {
     )
 
     const boxes = screen.getAllByRole('checkbox')
-    // agree-to-all + three statements
-    expect(boxes).toHaveLength(4)
-    for (const box of boxes.slice(1)) {
-      await user.click(box)
-    }
+    // agree-to-all + three required + optional camera
+    expect(boxes).toHaveLength(5)
+    await user.click(
+      screen.getByRole('checkbox', { name: /research-only prototype/i }),
+    )
+    await user.click(
+      screen.getByRole('checkbox', { name: /does not diagnose autism/i }),
+    )
+    await user.click(
+      screen.getByRole('checkbox', { name: /minimized, anonymous research data/i }),
+    )
     await user.click(
       screen.getByRole('button', { name: /accept and continue/i }),
     )
@@ -40,6 +46,7 @@ describe('Consent', () => {
       research_only: true,
       no_diagnosis: true,
       data_minimization: true,
+      camera_optional: false,
     })
   })
 
@@ -52,11 +59,25 @@ describe('Consent', () => {
 
     await user.click(
       screen.getByRole('checkbox', {
-        name: /agree to all consent statements/i,
+        name: /agree to all required consent statements/i,
       }),
     )
-    const boxes = screen.getAllByRole('checkbox')
-    expect(boxes.every((b) => (b as HTMLInputElement).checked)).toBe(true)
+    expect(
+      screen.getByRole('checkbox', { name: /research-only prototype/i }),
+    ).toBeChecked()
+    expect(
+      screen.getByRole('checkbox', { name: /does not diagnose autism/i }),
+    ).toBeChecked()
+    expect(
+      screen.getByRole('checkbox', {
+        name: /minimized, anonymous research data/i,
+      }),
+    ).toBeChecked()
+    expect(
+      screen.getByRole('checkbox', {
+        name: /optional — camera-based attention measures/i,
+      }),
+    ).not.toBeChecked()
 
     await user.click(
       screen.getByRole('button', { name: /accept and continue/i }),
@@ -65,6 +86,7 @@ describe('Consent', () => {
       research_only: true,
       no_diagnosis: true,
       data_minimization: true,
+      camera_optional: false,
     })
   })
 
@@ -75,7 +97,7 @@ describe('Consent', () => {
     )
 
     const agreeAll = screen.getByRole('checkbox', {
-      name: /agree to all consent statements/i,
+      name: /agree to all required consent statements/i,
     })
     await user.click(agreeAll)
     await user.click(agreeAll)
@@ -92,5 +114,44 @@ describe('Consent', () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/time-to-first-interaction/i)).toBeInTheDocument()
     expect(screen.getByText(/answer-change counts/i)).toBeInTheDocument()
+  })
+
+  it('submits camera_optional true without folding it into required flags', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(
+      <Consent busy={false} error={null} onSubmit={onSubmit} onBack={vi.fn()} />,
+    )
+
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /agree to all required consent statements/i,
+      }),
+    )
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /optional — camera-based attention measures/i,
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: /accept and continue/i }),
+    )
+    expect(onSubmit).toHaveBeenCalledWith({
+      research_only: true,
+      no_diagnosis: true,
+      data_minimization: true,
+      camera_optional: true,
+    })
+  })
+
+  it('camera copy does not claim diagnosis or stored-then-deleted video', () => {
+    render(
+      <Consent busy={false} error={null} onSubmit={vi.fn()} onBack={vi.fn()} />,
+    )
+    expect(screen.queryByText(/diagnostic accuracy/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/deleted after analysis/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/never recorded, uploaded, or stored/i),
+    ).toBeInTheDocument()
   })
 })

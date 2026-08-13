@@ -58,6 +58,7 @@ _SESSION_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("questionnaire_bank_id", "TEXT"),
     ("questionnaire_instrument_version", "TEXT"),
     ("questionnaire_subscale_scores", "TEXT"),
+    ("consent_camera_optional", "INTEGER"),
 )
 
 # Wait for locks under concurrent writers.

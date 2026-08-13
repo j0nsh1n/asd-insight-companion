@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional camera-based attention consent, separate from the three required
+  statements. Participants can decline the camera and still finish the
+  session; video analysis is never required.
+- Guided local face calibration after the camera quality check, then a short
+  attention-clip step. Webcam sampling stays in the browser and is summarized
+  as numbers only.
+- MediaPipe Face Landmarker assets (WASM + model) are served from this app
+  instead of third-party CDNs, so a session does not contact jsDelivr or
+  Google storage for those files.
 - Local camera check after the questionnaire: browser preview only, with
+- On-device MediaPipe Face Landmarker quality gate (face count, visibility,
+  lighting, head pose, tracking stability). Analysis stays in the browser;
+  continue is gated until checks pass (or skip without camera).
   `audio` never requested. Video stays in the tab — nothing is uploaded or
   stored on the server. Participants can continue without camera if access is
   denied or unavailable. Streams stop on cancel, continue, and when leaving
@@ -54,6 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Consent "Agree to all" applies only to the three required statements. The
+  camera item is optional and is not folded into that shortcut.
 - The data-minimization consent statement now names the response timing,
   time-to-first-interaction, and answer-change data that is collected.
 - The questionnaire completion screen no longer shows a numeric score. Scores
@@ -66,6 +80,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- If the attention clip fails to load or play, sampling stops and the
+  participant can continue without the clip instead of being stuck with
+  Finish task disabled.
 - A questionnaire answer saved at the same moment the questionnaire was
   completed could leave the stored summary disagreeing with the saved answers.
   Answer and completion now take the same write lock.

@@ -49,6 +49,10 @@ media/
 *.avi
 *.mov
 
+# MediaPipe binaries (copied/downloaded by frontend/scripts/vendor-mediapipe.mjs)
+frontend/public/mediapipe/wasm/
+frontend/public/mediapipe/face_landmarker.task
+
 # Docker
 *.log
 

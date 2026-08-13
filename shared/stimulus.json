@@ -1,0 +1,8 @@
+{
+  "stimulus_id": "dev-stimulus-placeholder-v1",
+  "title": "Short attention clip",
+  "description": "Development stand-in for a social-attention video. Replace with the study-approved clip before any real research deployment.",
+  "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  "min_watch_seconds": 8,
+  "note": "Video is streamed by the browser only for local playback. Webcam frames are never uploaded."
+}

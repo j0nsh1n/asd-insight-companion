@@ -1,0 +1,22 @@
+MediaPipe Tasks Vision (WASM) and Face Landmarker model bundle
+Copyright Google LLC and authors named on the model cards.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use these files except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+and in this directory as LICENSE.
+
+Sources (install-time only; participant sessions load these from this origin):
+- npm package @mediapipe/tasks-vision (license: Apache-2.0)
+- face_landmarker.task float16/1 bundle:
+    https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+  Component model cards (each: Apache License, Version 2.0):
+  - BlazeFace short-range
+  - MediaPipe Face Mesh V2
+  - Blendshape V2
+
+No modifications are made to the WASM files or the .task bundle; they are
+copied or downloaded as published.

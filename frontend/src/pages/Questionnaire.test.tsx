@@ -53,6 +53,7 @@ const baseSession = (stage: api.SessionStage): api.SessionResponse => ({
     research_only: true,
     no_diagnosis: true,
     data_minimization: true,
+    camera_optional: false,
     consented_at: '2026-01-01T00:01:00+00:00',
   },
   intake: {

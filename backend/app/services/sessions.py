@@ -81,10 +81,12 @@ def questionnaire_summary_from_mapping(
 def _row_to_response(row: sqlite3.Row) -> SessionResponse:
     """Map a database row to the public SessionResponse model."""
     mapping = _row_mapping(row)
+    camera_raw = mapping.get("consent_camera_optional")
     consent = ConsentState(
         research_only=bool(mapping["consent_research_only"]),
         no_diagnosis=bool(mapping["consent_no_diagnosis"]),
         data_minimization=bool(mapping["consent_data_minimization"]),
+        camera_optional=None if camera_raw is None else bool(camera_raw),
         consented_at=cast(str | None, mapping["consented_at"]),
     )
     intake: IntakeState | None = None
@@ -161,6 +163,7 @@ def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
                 consent_research_only = ?,
                 consent_no_diagnosis = ?,
                 consent_data_minimization = ?,
+                consent_camera_optional = ?,
                 consented_at = ?
             WHERE id = ? AND stage = ?
             """,
@@ -170,6 +173,7 @@ def record_consent(session_id: str, body: ConsentRequest) -> SessionResponse:
                 int(body.research_only),
                 int(body.no_diagnosis),
                 int(body.data_minimization),
+                int(body.camera_optional),
                 now,
                 session_id,
                 SessionStage.CREATED.value,
