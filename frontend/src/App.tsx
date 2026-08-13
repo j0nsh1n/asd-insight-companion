@@ -11,7 +11,6 @@ import {
   type SessionResponse,
   type SessionStage,
 } from './lib/api'
-import type { LocalFeatureSummary } from './lib/localFeatures'
 import {
   clearSessionId,
   loadSessionId,
@@ -22,7 +21,7 @@ import { CameraCheck } from './pages/CameraCheck'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
-import { StimulusTask } from './pages/StimulusTask'
+import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
@@ -55,8 +54,6 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasStoredId, setHasStoredId] = useState(false)
-  const [featureSummary, setFeatureSummary] =
-    useState<LocalFeatureSummary | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -193,8 +190,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 3C: calibration
-            + stimulus)
+            Research-only ASD-trait prescreen prototype (Phase 4A: stimulus
+            task)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -265,11 +262,9 @@ function App() {
         )}
 
         {view === 'stimulus' && (
-          <StimulusTask
-            cameraAllowed={session?.consent.camera_optional === true}
+          <StimulusTaskPage
             onBack={() => setView('calibration')}
-            onComplete={(summary) => {
-              setFeatureSummary(summary)
+            onSkip={() => {
               setView('session_done')
               setError(null)
             }}
@@ -284,19 +279,9 @@ function App() {
               stopped in this browser.
             </p>
             <p className="muted">
-              No webcam video or images were uploaded. Optional local face
-              sampling is summarized as numbers only for research logging later.
+              No webcam video or images were uploaded. The attention clip is
+              not scored in this step.
             </p>
-            {featureSummary && (
-              <ul className="summary-list">
-                <li>Local samples: {featureSummary.sample_count}</li>
-                <li>
-                  Single-face fraction:{' '}
-                  {(featureSummary.fraction_single_face * 100).toFixed(0)}%
-                </li>
-                <li>Media uploaded: {String(featureSummary.media_uploaded)}</li>
-              </ul>
-            )}
             <div className="button-row">
               <button type="button" className="btn" onClick={showWelcome}>
                 Back to welcome

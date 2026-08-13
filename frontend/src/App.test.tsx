@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -265,16 +265,14 @@ describe('App Phase 1 flow', () => {
       screen.getByRole('button', { name: /skip calibration camera/i }),
     )
     expect(
-      screen.getByRole('heading', { name: /short attention clip/i }),
+      screen.getByRole('heading', { name: /two-person object organization/i }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /enable camera sampling/i }),
     ).not.toBeInTheDocument()
+    expect(container.querySelector('video.stimulus-video')).toBeNull()
 
-    const clip = container.querySelector('video.stimulus-video')
-    expect(clip).toBeTruthy()
-    fireEvent(clip as HTMLVideoElement, new Event('ended'))
-    await user.click(screen.getByRole('button', { name: /finish task/i }))
+    await user.click(screen.getByRole('button', { name: /skip video task/i }))
 
     expect(
       screen.getByRole('heading', { name: /session complete/i }),

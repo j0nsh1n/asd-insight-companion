@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Accessible attention-clip step (Phase 4A): one local stimulus from
+  `shared/stimuli_manifest.json`, captions, a descriptive transcript, Start /
+  Skip / Back, and no autoplay. Skipping is allowed and is not scored.
 - Optional camera-based attention consent, separate from the three required
   statements. Participants can decline the camera and still finish the
   session; video analysis is never required.
