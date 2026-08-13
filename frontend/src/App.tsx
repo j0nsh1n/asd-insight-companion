@@ -21,6 +21,7 @@ import { CameraCheck } from './pages/CameraCheck'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
+import type { TrackingSessionSummary } from './lib/stimulusTracking'
 import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
@@ -54,6 +55,8 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasStoredId, setHasStoredId] = useState(false)
+  const [trackingSummary, setTrackingSummary] =
+    useState<TrackingSessionSummary | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -190,8 +193,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 4A: stimulus
-            task)
+            Research-only ASD-trait prescreen prototype (Phase 4B: local
+            tracking)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -263,8 +266,10 @@ function App() {
 
         {view === 'stimulus' && (
           <StimulusTaskPage
+            cameraAllowed={session?.consent.camera_optional === true}
             onBack={() => setView('calibration')}
-            onSkip={() => {
+            onSkip={(summary) => {
+              setTrackingSummary(summary)
               setView('session_done')
               setError(null)
             }}
@@ -279,9 +284,17 @@ function App() {
               stopped in this browser.
             </p>
             <p className="muted">
-              No webcam video or images were uploaded. The attention clip is
-              not scored in this step.
+              No webcam video or images were uploaded. Local face samples stay
+              in this browser tab only and are not a diagnosis.
             </p>
+            {trackingSummary && (
+              <ul className="summary-list">
+                <li>Local samples: {trackingSummary.sample_count}</li>
+                <li>
+                  Media uploaded: {String(trackingSummary.media_uploaded)}
+                </li>
+              </ul>
+            )}
             <div className="button-row">
               <button type="button" className="btn" onClick={showWelcome}>
                 Back to welcome

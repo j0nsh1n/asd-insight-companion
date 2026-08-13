@@ -440,6 +440,15 @@
   background: #000;
 }
 
+.stimulus-cam-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .stimulus-cam-thumb {
   width: 7rem;
   height: 5.25rem;

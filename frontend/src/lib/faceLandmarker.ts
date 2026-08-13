@@ -28,7 +28,7 @@ export async function getFaceLandmarker(): Promise<FaceLandmarker> {
         },
         runningMode: 'VIDEO',
         numFaces: 3,
-        outputFaceBlendshapes: false,
+        outputFaceBlendshapes: true,
         outputFacialTransformationMatrixes: true,
       })
     })().catch((err) => {
@@ -74,6 +74,24 @@ export function estimateTrackingConfidence(
   if (!lm || lm.length < 10) return 0.4
   // Presence of a dense mesh implies a solid track.
   return Math.min(1, 0.55 + Math.min(lm.length, 478) / 1000)
+}
+
+/**
+ * Mean of eyeBlinkLeft / eyeBlinkRight blendshapes, or null if unavailable.
+ */
+export function estimateBlink(result: FaceLandmarkerResult): number | null {
+  const categories = result.faceBlendshapes?.[0]?.categories
+  if (!categories?.length) return null
+  let left: number | undefined
+  let right: number | undefined
+  for (const c of categories) {
+    if (c.categoryName === 'eyeBlinkLeft') left = c.score
+    if (c.categoryName === 'eyeBlinkRight') right = c.score
+  }
+  if (left == null && right == null) return null
+  if (left == null) return right ?? null
+  if (right == null) return left
+  return (left + right) / 2
 }
 
 export type { FaceLandmarkerResult }

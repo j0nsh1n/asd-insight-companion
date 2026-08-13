@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- On-device face tracking during the attention clip (Phase 4B): starts with
+  the task, pauses when the clip pauses, and stops the camera when the clip
+  ends or the participant skips or leaves. Numbers stay in this tab only —
+  no frames are recorded or uploaded.
 - Accessible attention-clip step (Phase 4A): one local stimulus from
   `shared/stimuli_manifest.json`, captions, a descriptive transcript, Start /
   Skip / Back, and no autoplay. Skipping is allowed and is not scored.

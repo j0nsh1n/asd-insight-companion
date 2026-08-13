@@ -2,23 +2,21 @@
 
 ## Current State
 
-Branch `feat/phase-4a-stimulus-task`. Phase 4A (one accessible stimulus task,
-no tracking or scoring) plus this fix pass: orphaned 3C clip removed,
-missing-file alert, intent documented.
+Branch `feat/phase-4b-stimulus-tracking`. Phase 4B (local tracking during the
+stimulus clip) is implemented on top of Phase 4A.
 
-Gates as of 2026-08-13 (this fix pass):
+Gates as of 2026-08-13 (Phase 4B):
 
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (44 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (62 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (70 tests) |
 
-Phases 0–3C camera/calibration remain. Phase 4A is the only stimulus task.
-**Phase 4B (tracking during stimulus) not started.**
+Phases 0–4A remain. **Phase 4C (upload / fusion) not started.**
 
-Known gaps: placeholder `.mp4` is gitignored and not in the repo (player now
-alerts); orphan answers if bank version changes mid-dev; score in API but not
-UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
+Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank version
+changes mid-dev; score in API but not UI; no withdraw/TTL/auth; SQLite
+unencrypted; tracking summary is in-memory only; CI may lag unpushed commits.
 
 ## Repo Landmarks
 
@@ -27,22 +25,21 @@ UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
     backend/app/services/sessions.py, assessment.py, question_bank.py, scoring.py
     backend/app/api/v1/  health, sessions, assessment
     shared/question_bank.json     Swappable placeholder instrument
-    shared/stimuli_manifest.json  Sole stimulus task (Phase 4A)
+    shared/stimuli_manifest.json  Sole stimulus task
     docs/STIMULUS_RIGHTS_AND_DESIGN.md
     frontend/public/stimuli/      captions + transcript; mp4 dropped in locally
     frontend/src/App.tsx          welcome → consent → intake → questionnaire
-                                  → camera → calibration → stimulus (4A)
+                                  → camera → calibration → stimulus (4A/4B)
                                   → session_done
     frontend/src/pages/           Welcome, Consent, Intake, Questionnaire,
                                   CameraCheck, Calibration, StimulusTaskPage
     frontend/src/components/      ResearchDisclaimer, StimulusPlayer
     frontend/src/lib/             api.ts, sessionStorage.ts, camera.ts,
                                   cameraQuality.ts, faceLandmarker.ts,
-                                  localFeatures.ts, stimuliManifest.ts
+                                  localFeatures.ts, stimuliManifest.ts,
+                                  stimulusTracking.ts, useStimulusTracking.ts
     frontend/public/mediapipe/    NOTICE + LICENSE; wasm/ and .task via postinstall
-    frontend/scripts/vendor-mediapipe.mjs
     scripts/                      run-backend.sh, dev.sh, smoke-phase0.sh
-    .github/workflows/            ci.yml, codeql.yml
     .local/                       gitignored operator notes
 
 ## Domain Model
@@ -50,36 +47,32 @@ UI; no withdraw/TTL/auth; SQLite unencrypted; CI may lag unpushed commits.
     sessions 1 -- * question_responses
     Stage: created → consented → intake_complete
          → questionnaire_in_progress → questionnaire_complete
-    Client-only after that: camera check → calibration → 4A stimulus page
-         → session checkpoint.
+    Client-only after that: camera check → calibration → stimulus
+         (optional local tracking buffer) → session checkpoint.
+    Tracking frames exist only in tab memory. Not written to SQLite.
     Consent stores three required flags plus optional camera_optional.
-    No media stored server-side. SQLite at backend/data/app.db (gitignored).
 
 ## Non-Obvious Decisions
 
 - Dev deps (ruff/mypy) in requirements-dev.txt; Vitest needs explicit cleanup
   in setup.ts; oxlint fails on warnings; CI uses per-directory working-dir.
-- Raw sqlite3 + ADD COLUMN migrations; BEGIN IMMEDIATE before yield for
-  write-critical questionnaire paths.
-- Question bank is a placeholder; score stored, never shown to participants.
-- Timing telemetry client-reported; naive ISO timestamps treated as UTC.
-- **Camera (3A):** `getUserMedia` audio:false only; preview local; streams
-  stopped on cancel/continue/unmount.
-- **MediaPipe (3C):** self-hosted under `/mediapipe/` (Apache-2.0 NOTICE).
-- **Vite `@shared` alias** maps to `../shared` only; `server.fs.allow` is
-  `[frontend, shared]`.
-- **Optional camera consent** still gates camera/calibration only. Phase 4A
-  stimulus never calls `getUserMedia` and does not attach MediaPipe.
-- **One stimulus only:** 3C `StimulusTask` / `stimulus.json` / Google CDN
-  clip were removed. `StimulusTaskPage` + `stimuli_manifest.json` remain.
-- **4A skip** goes to `session_done` (no react-router). Back returns to
-  calibration. There is no separate results route.
-- Missing `.mp4` is expected in git; the player shows a skippable alert.
-- Feature summaries are local-only and are not collected on the 4A page.
+- **Camera (3A):** `getUserMedia` audio:false only; generation counter on
+  unmount. 4B reuses `requestVideoOnlyStream` / `stopMediaStream`.
+- **MediaPipe:** self-hosted `/mediapipe/`. 4B enables blendshapes on the
+  shared Face Landmarker singleton so blink_estimate can be filled.
+- **Optional camera consent** still fail-closed. 4B never calls getUserMedia
+  when `camera_optional` is not true; the clip can still be watched or skipped.
+- **4B loop** samples the hidden webcam element, not the stimulus `<video>`.
+  Timestamps are clip `currentTime` in ms. Pause stops rAF and keeps the
+  stream; end/skip/back/unmount stop the stream and clear the frame buffer
+  after summarizing into App state.
+- **No MediaRecorder, toBlob, toDataURL, or frame uploads.** Transcript
+  `fetch` is text-only. No new backend endpoints.
+- **localFeatures.ts** is unused by the live 4B path (older numeric helper).
 - docker never verified on this machine.
 
 ## Session Handoff
 
-2026-08-13 · `feat/phase-4a-stimulus-task` · Phase 4A fix pass: deleted
-orphaned 3C stimulus, missing-clip alert, intent section in rights doc.
-Next: examiner gate. Phase 4B/4C not started.
+2026-08-13 · `feat/phase-4b-stimulus-tracking` · Phase 4B local tracking
+during stimulus (in-memory frames + summary, camera consent honored).
+Next: examiner gate. Phase 4C not started.

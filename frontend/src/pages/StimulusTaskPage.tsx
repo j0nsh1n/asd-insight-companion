@@ -1,22 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import { StimulusPlayer } from '../components/StimulusPlayer'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
+import type { TrackingSessionSummary } from '../lib/stimulusTracking'
+import { useStimulusTracking } from '../lib/useStimulusTracking'
 
 export type StimulusTaskPageProps = {
   onBack: () => void
   /** Non-punitive leave — same next step whether or not the clip was watched. */
-  onSkip: () => void
+  onSkip: (summary: TrackingSessionSummary) => void
+  /** False when optional camera consent was declined. */
+  cameraAllowed?: boolean
 }
 
 /**
- * Phase 4A: one accessible stimulus task. No camera, tracking, or scoring.
+ * Phase 4B: accessible stimulus task + local-only face tracking while playing.
+ * No upload, no disk, no scoring.
  */
-export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
+export function StimulusTaskPage({
+  onBack,
+  onSkip,
+  cameraAllowed = false,
+}: StimulusTaskPageProps) {
   const task = getStimulusTaskManifest()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [started, setStarted] = useState(false)
   const [clipError, setClipError] = useState(false)
   const [transcript, setTranscript] = useState<string | null>(null)
+  const tracking = useStimulusTracking(cameraAllowed, videoRef)
 
   useEffect(() => {
     let cancelled = false
@@ -41,6 +51,11 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
 
   const startTask = () => {
     setStarted(true)
+    void tracking.startCamera()
+  }
+
+  const leave = (next: (summary: TrackingSessionSummary) => void) => {
+    next(tracking.stopAndClear())
   }
 
   return (
@@ -50,6 +65,18 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
         This is part of a research prototype and is not a diagnostic test.
       </p>
       <p className="stimulus-instruction">{task.participant_instruction}</p>
+      {cameraAllowed ? (
+        <aside className="privacy-camera-note" role="note">
+          <strong>Privacy:</strong> If you start this step, the webcam is used
+          only on this device while the clip plays. Frames are not recorded,
+          uploaded, or stored — only anonymous numbers stay in this tab.
+        </aside>
+      ) : (
+        <p className="muted">
+          Camera-based measures were declined at consent. You can still watch
+          or skip the clip.
+        </p>
+      )}
 
       {started ? (
         <StimulusPlayer
@@ -57,12 +84,37 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
           captionsSrc={task.captions_file}
           label={task.video_description}
           videoRef={videoRef}
-          onError={() => setClipError(true)}
+          onError={() => {
+            tracking.pauseLoop()
+            setClipError(true)
+          }}
+          onPlay={() => tracking.startLoop()}
+          onPause={() => tracking.pauseLoop()}
+          onEnded={() => {
+            tracking.stopAndClear()
+          }}
         />
       ) : (
         <div className="stimulus-video-wrap" aria-hidden="true">
           <div className="camera-preview-placeholder">Video not started</div>
         </div>
+      )}
+
+      {cameraAllowed && (
+        <video
+          ref={tracking.camRef}
+          className="stimulus-cam-hidden"
+          playsInline
+          muted
+          autoPlay
+          aria-hidden="true"
+        />
+      )}
+
+      {tracking.camError && (
+        <p className="status-error" role="alert">
+          {tracking.camError}
+        </p>
       )}
 
       {clipError && (
@@ -83,7 +135,11 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
       </details>
 
       <div className="button-row">
-        <button type="button" className="btn" onClick={onBack}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => leave(() => onBack())}
+        >
           Back
         </button>
         {!started && (
@@ -91,7 +147,11 @@ export function StimulusTaskPage({ onBack, onSkip }: StimulusTaskPageProps) {
             Start video task
           </button>
         )}
-        <button type="button" className="btn" onClick={onSkip}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => leave(onSkip)}
+        >
           Skip video task
         </button>
       </div>

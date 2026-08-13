@@ -6,6 +6,9 @@ export type StimulusPlayerProps = {
   label: string
   videoRef: Ref<HTMLVideoElement>
   onError?: () => void
+  onPlay?: () => void
+  onPause?: () => void
+  onEnded?: () => void
 }
 
 /**
@@ -18,6 +21,9 @@ export function StimulusPlayer({
   label,
   videoRef,
   onError,
+  onPlay,
+  onPause,
+  onEnded,
 }: StimulusPlayerProps) {
   return (
     <div className="stimulus-video-wrap">
@@ -31,6 +37,9 @@ export function StimulusPlayer({
         tabIndex={0}
         aria-label={label}
         onError={onError}
+        onPlay={onPlay}
+        onPause={onPause}
+        onEnded={onEnded}
       >
         <track kind="captions" src={captionsSrc} srcLang="en" label="English" default />
       </video>
