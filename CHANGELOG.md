@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tracking summaries now include an explicit `data_quality` flag
+  (ok / low / insufficient / unavailable), computed from the same shared
+  thresholds the API uses. The server still classifies independently.
+- Numeric tracking summary sent after the attention clip (Phase 4C): ratios,
+  valid-tracking duration, task-completed flag, and blink/head-motion
+  averages only. No frames. The API accepts or rejects the JSON and reports
+  tracking quality — it does not score autism risk.
+- On-device face tracking during the attention clip (Phase 4B): starts with
+  the task, pauses when the clip pauses, and stops the camera when the clip
+  ends or the participant skips or leaves. Numbers stay in this tab only —
+  no frames are recorded or uploaded.
+- Accessible attention-clip step (Phase 4A): one local stimulus from
+  `shared/stimuli_manifest.json`, captions, a descriptive transcript, Start /
+  Skip / Back, and no autoplay. Skipping is allowed and is not scored.
 - Optional camera-based attention consent, separate from the three required
   statements. Participants can decline the camera and still finish the
   session; video analysis is never required.
@@ -80,6 +94,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Calibration step 1 no longer shows a black preview: the webcam stream is
+  attached after the preview element mounts.
+- If the attention clip file is missing from this build, the stimulus step
+  now says so and still lets the participant skip.
 - If the attention clip fails to load or play, sampling stops and the
   participant can continue without the clip instead of being stuck with
   Finish task disabled.

@@ -440,6 +440,15 @@
   background: #000;
 }
 
+.stimulus-cam-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .stimulus-cam-thumb {
   width: 7rem;
   height: 5.25rem;
@@ -448,4 +457,23 @@
   border: 1px solid #2a3542;
   margin: 0 0 0.75rem;
   transform: scaleX(-1);
+}
+
+.stimulus-instruction {
+  margin: 0 0 1rem;
+  line-height: 1.45;
+}
+
+.stimulus-transcript {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.stimulus-transcript-body {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #c5d0db;
+  margin: 0.65rem 0 0;
 }

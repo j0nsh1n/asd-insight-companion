@@ -3,6 +3,8 @@
 from fastapi import APIRouter
 
 from app.models.assessment import (
+    FeatureIngestResult,
+    FeaturePayload,
     QuestionBankPublic,
     QuestionnaireCompleteRequest,
     QuestionnaireProgress,
@@ -70,3 +72,18 @@ def post_questionnaire_complete(
 ) -> SessionResponse:
     """Finalize questionnaire and store non-diagnostic summary score."""
     return assessment_service.complete_questionnaire(body)
+
+
+@router.post(
+    "/features",
+    response_model=FeatureIngestResult,
+    responses={
+        403: _ERRORS[403],
+        404: _ERRORS[404],
+        409: _ERRORS[409],
+        422: _ERRORS[422],
+    },
+)
+def post_features(body: FeaturePayload) -> FeatureIngestResult:
+    """Accept aggregate numeric tracking features only. No autism score."""
+    return assessment_service.record_features(body)

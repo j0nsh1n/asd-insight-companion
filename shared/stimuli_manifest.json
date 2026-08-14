@@ -1,0 +1,22 @@
+{
+  "task_version": "social-interaction-v1",
+  "title": "Two-Person Object Organization",
+  "duration_target_seconds": 45,
+  "video_file": "/stimuli/social-interaction-v1.mp4",
+  "captions_file": "/stimuli/social-interaction-v1.en.vtt",
+  "transcript_file": "/stimuli/social-interaction-v1.transcript.md",
+  "video_description": "Short video of two people organizing objects on a table.",
+  "participant_instruction": "Watch the video naturally. There are no right or wrong ways to view it. You may pause, restart, skip, or stop at any time.",
+  "rights": {
+    "source_type": "original_team_recording",
+    "rights_status": "team-owned-or-documented-permission",
+    "actor_consent_required": true,
+    "minor_actors_allowed": false
+  },
+  "accessibility": {
+    "captions_required": true,
+    "descriptive_transcript_required": true,
+    "keyboard_controls_required": true,
+    "skip_allowed": true
+  }
+}
