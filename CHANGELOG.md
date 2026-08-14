@@ -87,6 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Calibration step 1 no longer shows a black preview: the webcam stream is
+  attached after the preview element mounts.
 - If the attention clip file is missing from this build, the stimulus step
   now says so and still lets the participant skip.
 - If the attention clip fails to load or play, sampling stops and the

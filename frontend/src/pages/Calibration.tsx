@@ -79,6 +79,18 @@ export function Calibration({
     }
   }, [releaseCamera])
 
+  // Preview <video> only mounts on center/hold. Attach after that paint.
+  useEffect(() => {
+    if (step !== 'center' && step !== 'hold') return
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (!video || !stream) return
+    if (video.srcObject !== stream) {
+      video.srcObject = stream
+      void video.play().catch(() => {})
+    }
+  }, [step])
+
   const sampleBrightness = (video: HTMLVideoElement): number => {
     const w = 64
     const h = 48
@@ -162,10 +174,6 @@ export function Calibration({
       }
       assertVideoOnly(stream)
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play().catch(() => {})
-      }
       if (!mountedRef.current || gen !== requestGenRef.current) {
         stopMediaStream(stream)
         streamRef.current = null

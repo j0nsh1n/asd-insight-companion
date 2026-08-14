@@ -74,5 +74,5 @@ unencrypted; tracking summary is in-memory only; CI may lag unpushed commits.
 ## Session Handoff
 
 2026-08-13 · `feat/phase-4b-stimulus-tracking` · Phase 4B local tracking
-during stimulus (in-memory frames + summary, camera consent honored).
+plus calibration preview attach-after-mount (step 1 was black).
 Next: examiner gate. Phase 4C not started.

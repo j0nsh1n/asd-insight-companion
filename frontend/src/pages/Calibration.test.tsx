@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as camera from '../lib/camera'
 import { Calibration } from './Calibration'
 
@@ -22,7 +22,22 @@ vi.mock('../lib/camera', async () => {
   }
 })
 
+function makeStream(): MediaStream {
+  const track = { kind: 'video', stop: vi.fn() } as unknown as MediaStreamTrack
+  return {
+    getTracks: () => [track],
+    getAudioTracks: () => [],
+    getVideoTracks: () => [track],
+  } as unknown as MediaStream
+}
+
 describe('Calibration', () => {
+  beforeEach(() => {
+    vi.mocked(camera.requestVideoOnlyStream).mockReset()
+    vi.mocked(camera.stopMediaStream).mockReset()
+    HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
+  })
+
   it('renders intro with skip path', () => {
     render(
       <Calibration onBack={vi.fn()} onComplete={vi.fn()} />,
@@ -57,5 +72,22 @@ describe('Calibration', () => {
     )
     expect(onComplete).toHaveBeenCalled()
     expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
+  })
+
+  it('attaches the live stream after Start with camera mounts step 1', async () => {
+    const user = userEvent.setup()
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+
+    const { container } = render(
+      <Calibration onBack={vi.fn()} onComplete={vi.fn()} />,
+    )
+    await user.click(screen.getByRole('button', { name: /start with camera/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/step 1 — center/i)).toBeInTheDocument()
+    })
+    const preview = container.querySelector('video.camera-preview')
+    expect(preview).toBeTruthy()
+    expect((preview as HTMLVideoElement).srcObject).toBe(stream)
   })
 })
