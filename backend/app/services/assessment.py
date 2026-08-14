@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import UTC, datetime
-from typing import cast
+from typing import Literal, cast
 
 from fastapi import HTTPException
 
 from app.db import get_connection
 from app.models.assessment import (
+    FeatureIngestResult,
+    FeaturePayload,
     QuestionnaireCompleteRequest,
     QuestionnaireProgress,
     QuestionResponseRequest,
@@ -328,3 +330,47 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
             raise HTTPException(status_code=409, detail="invalid_stage")
 
     return session_service.get_session(body.session_id)
+
+
+def _classify_feature_quality(
+    body: FeaturePayload,
+) -> Literal["ok", "low", "insufficient", "unavailable"]:
+    """Tracking quality only — not an autism or clinical score."""
+    if body.sample_count == 0:
+        return "unavailable"
+    if body.valid_tracking_duration_ms < 2000 or body.tracking_ratio < 0.25:
+        return "insufficient"
+    if body.tracking_ratio < 0.55 or body.dropped_frame_ratio > 0.45:
+        return "low"
+    return "ok"
+
+
+def record_features(body: FeaturePayload) -> FeatureIngestResult:
+    """Store aggregate numeric features. Rejects if already recorded."""
+    now = _utc_now()
+    quality = _classify_feature_quality(body)
+    payload_json = body.model_dump_json()
+    with get_connection() as conn:
+        row = _require_session_row(conn, body.session_id)
+        stage = SessionStage(str(row["stage"]))
+        if stage != SessionStage.QUESTIONNAIRE_COMPLETE:
+            raise HTTPException(status_code=403, detail="questionnaire_not_complete")
+        existing = row["feature_payload"]
+        if existing:
+            raise HTTPException(status_code=409, detail="features_already_recorded")
+        conn.execute(
+            """
+            UPDATE sessions SET
+                updated_at = ?,
+                feature_payload = ?,
+                feature_quality = ?,
+                feature_recorded_at = ?
+            WHERE id = ?
+            """,
+            (now, payload_json, quality, now, body.session_id),
+        )
+    return FeatureIngestResult(
+        status="accepted",
+        quality=quality,
+        detail="numeric_features_stored",
+    )

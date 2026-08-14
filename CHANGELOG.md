@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Numeric tracking summary sent after the attention clip (Phase 4C): ratios,
+  valid-tracking duration, task-completed flag, and blink/head-motion
+  averages only. No frames. The API accepts or rejects the JSON and reports
+  tracking quality — it does not score autism risk.
 - On-device face tracking during the attention clip (Phase 4B): starts with
   the task, pauses when the clip pauses, and stops the camera when the clip
   ends or the participant skips or leaves. Numbers stay in this tab only —

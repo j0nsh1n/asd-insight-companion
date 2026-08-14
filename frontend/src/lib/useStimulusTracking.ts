@@ -35,6 +35,9 @@ export function useStimulusTracking(
   const lastTsRef = useRef(-1)
   const playOriginMsRef = useRef<number | null>(null)
   const framesRef = useRef<TrackingFrame[]>([])
+  const tickAttemptsRef = useRef(0)
+  const tickFailuresRef = useRef(0)
+  const taskCompletedRef = useRef(false)
   const lastSummaryRef = useRef<TrackingSessionSummary>(emptyTrackingSummary())
 
   const [cameraOn, setCameraOn] = useState(false)
@@ -60,8 +63,13 @@ export function useStimulusTracking(
   }
 
   const snapshotSummary = useCallback((): TrackingSessionSummary => {
-    const summary = summarizeTrackingFrames(framesRef.current, durationMs())
+    const summary = summarizeTrackingFrames(framesRef.current, durationMs(), {
+      taskCompleted: taskCompletedRef.current,
+      tickAttempts: tickAttemptsRef.current,
+      tickFailures: tickFailuresRef.current,
+    })
     lastSummaryRef.current = summary
+    framesRef.current = []
     return summary
   }, [])
 
@@ -69,6 +77,9 @@ export function useStimulusTracking(
     framesRef.current = []
     playOriginMsRef.current = null
     lastTsRef.current = -1
+    tickAttemptsRef.current = 0
+    tickFailuresRef.current = 0
+    taskCompletedRef.current = false
   }, [])
 
   const stopAndClear = useCallback((): TrackingSessionSummary => {
@@ -140,6 +151,7 @@ export function useStimulusTracking(
         return
       }
       const cam = camRef.current
+      tickAttemptsRef.current += 1
       if (cam && cam.readyState >= 2) {
         try {
           const lm = await getFaceLandmarker()
@@ -154,8 +166,10 @@ export function useStimulusTracking(
           const clipTs = clipVideoRef.current?.currentTime ?? 0
           framesRef.current.push(frameFromDetection(clipTs * 1000, result))
         } catch {
-          // landmarker optional — clip still plays
+          tickFailuresRef.current += 1
         }
+      } else {
+        tickFailuresRef.current += 1
       }
       if (mountedRef.current && playingRef.current && streamRef.current) {
         rafRef.current = requestAnimationFrame(() => void tick())
@@ -170,6 +184,10 @@ export function useStimulusTracking(
     stopLoop()
   }, [stopLoop])
 
+  const markTaskCompleted = useCallback(() => {
+    taskCompletedRef.current = true
+  }, [])
+
   return {
     camRef,
     cameraOn,
@@ -177,6 +195,7 @@ export function useStimulusTracking(
     startCamera,
     startLoop,
     pauseLoop,
+    markTaskCompleted,
     stopAndClear,
     latestSummary: () => lastSummaryRef.current,
   }

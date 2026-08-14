@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FaceLandmarkerResult } from './faceLandmarker'
 import {
+  buildFeaturePayload,
   emptyTrackingSummary,
   frameFromDetection,
   summarizeTrackingFrames,
@@ -61,14 +62,42 @@ describe('stimulusTracking', () => {
         blink_estimate: null,
       },
     ]
-    const summary = summarizeTrackingFrames(frames, 800)
+    const summary = summarizeTrackingFrames(frames, 800, {
+      taskCompleted: true,
+      tickAttempts: 3,
+      tickFailures: 1,
+    })
     expect(summary.sample_count).toBe(2)
     expect(summary.duration_ms).toBe(800)
-    expect(summary.fraction_one_face).toBe(0.5)
-    expect(summary.fraction_tracking_ok).toBe(0.5)
+    expect(summary.single_face_ratio).toBe(0.5)
+    expect(summary.tracking_ratio).toBe(0.5)
+    expect(summary.dropped_frame_ratio).toBeCloseTo(1 / 3)
+    expect(summary.task_completed).toBe(true)
     expect(summary.mean_abs_yaw_deg).toBeCloseTo(4)
     expect(summary.mean_blink_estimate).toBeCloseTo(0.2)
     expect(summary.media_uploaded).toBe(false)
+  })
+
+  it('builds a JSON-only FeaturePayload and leaves no frame list', () => {
+    const summary = summarizeTrackingFrames(
+      [
+        {
+          timestamp: 0,
+          tracking_ok: true,
+          one_face: true,
+          head_pose: { yawDeg: 1, pitchDeg: 1, rollDeg: 0 },
+          blink_estimate: 0.1,
+        },
+      ],
+      400,
+      { taskCompleted: true },
+    )
+    const payload = buildFeaturePayload('sid-1', 'social-interaction-v1', summary)
+    expect(payload.session_id).toBe('sid-1')
+    expect(payload.media_uploaded).toBe(false)
+    expect(payload.task_completed).toBe(true)
+    expect(JSON.stringify(payload)).not.toMatch(/faceLandmarks|frames|base64|blob/i)
+    expect('frames' in payload).toBe(false)
   })
 
   it('returns an empty summary with media_uploaded false', () => {

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.session import SessionResponse, SessionStage
 
@@ -134,6 +135,48 @@ class QuestionnaireCompleteRequest(BaseModel):
         if not cleaned:
             raise ValueError("session_id must not be empty")
         return cleaned
+
+
+class FeaturePayload(BaseModel):
+    """Aggregate numeric features only. Extra / raw-media fields are rejected."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str = Field(min_length=1)
+    task_version: str = Field(min_length=1, max_length=64)
+    sample_count: int = Field(ge=0, le=1_000_000)
+    duration_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
+    tracking_ratio: float = Field(ge=0.0, le=1.0)
+    single_face_ratio: float = Field(ge=0.0, le=1.0)
+    dropped_frame_ratio: float = Field(ge=0.0, le=1.0)
+    valid_tracking_duration_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
+    task_completed: bool
+    mean_abs_yaw_deg: float = Field(ge=0.0, le=180.0)
+    mean_abs_pitch_deg: float = Field(ge=0.0, le=180.0)
+    mean_blink_estimate: float | None = Field(default=None, ge=0.0, le=1.0)
+    media_uploaded: Literal[False]
+
+    @field_validator("session_id", "task_version")
+    @classmethod
+    def strip_feature_ids(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("field must not be empty")
+        return cleaned
+
+    @model_validator(mode="after")
+    def duration_bounds(self) -> FeaturePayload:
+        if self.valid_tracking_duration_ms > self.duration_ms:
+            raise ValueError("valid_tracking_duration_ms must be <= duration_ms")
+        return self
+
+
+class FeatureIngestResult(BaseModel):
+    """Accept/reject + tracking quality. No autism risk score."""
+
+    status: Literal["accepted", "rejected"]
+    quality: Literal["ok", "low", "insufficient", "unavailable"]
+    detail: str
 
 
 class QuestionnaireProgress(BaseModel):

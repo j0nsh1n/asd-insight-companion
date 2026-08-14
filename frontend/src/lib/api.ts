@@ -119,6 +119,28 @@ export type QuestionResponseResult = {
   next_question_id: string | null
 }
 
+export type FeaturePayload = {
+  session_id: string
+  task_version: string
+  sample_count: number
+  duration_ms: number
+  tracking_ratio: number
+  single_face_ratio: number
+  dropped_frame_ratio: number
+  valid_tracking_duration_ms: number
+  task_completed: boolean
+  mean_abs_yaw_deg: number
+  mean_abs_pitch_deg: number
+  mean_blink_estimate: number | null
+  media_uploaded: false
+}
+
+export type FeatureIngestResult = {
+  status: 'accepted' | 'rejected'
+  quality: 'ok' | 'low' | 'insufficient' | 'unavailable'
+  detail: string
+}
+
 export type QuestionnaireProgress = {
   session_id: string
   stage: SessionStage
@@ -262,6 +284,12 @@ export async function postQuestionnaireComplete(
   return postJson<SessionResponse>('/api/v1/assessment/questionnaire/complete', {
     session_id: sessionId,
   })
+}
+
+export async function postFeatures(
+  payload: FeaturePayload,
+): Promise<FeatureIngestResult> {
+  return postJson<FeatureIngestResult>('/api/v1/assessment/features', payload)
 }
 
 export { API_BASE_URL }

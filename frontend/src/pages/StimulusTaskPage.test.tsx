@@ -56,7 +56,13 @@ describe('StimulusTaskPage', () => {
 
   it('renders instruction and start/skip controls from the manifest', () => {
     const task = getStimulusTaskManifest()
-    render(<StimulusTaskPage onBack={vi.fn()} onSkip={vi.fn()} />)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
 
     expect(
       screen.getByRole('heading', { name: task.title }),
@@ -79,7 +85,13 @@ describe('StimulusTaskPage', () => {
   it('skip is available without starting and does not imply a failed task', async () => {
     const user = userEvent.setup()
     const onSkip = vi.fn()
-    render(<StimulusTaskPage onBack={vi.fn()} onSkip={onSkip} />)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        onBack={vi.fn()}
+        onSkip={onSkip}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /skip video task/i }))
     expect(onSkip).toHaveBeenCalledTimes(1)
   })
@@ -87,7 +99,13 @@ describe('StimulusTaskPage', () => {
   it('Start video task loads the player and moves focus to it', async () => {
     const user = userEvent.setup()
     const task = getStimulusTaskManifest()
-    render(<StimulusTaskPage onBack={vi.fn()} onSkip={vi.fn()} />)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /start video task/i }))
     const player = screen.getByLabelText(task.video_description)
     expect(player.tagName).toBe('VIDEO')
@@ -97,7 +115,13 @@ describe('StimulusTaskPage', () => {
 
   it('shows an alert when the clip fails to load and skip remains', async () => {
     const user = userEvent.setup()
-    render(<StimulusTaskPage onBack={vi.fn()} onSkip={vi.fn()} />)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /start video task/i }))
     const player = document.querySelector('video')
     expect(player).toBeTruthy()
@@ -117,6 +141,7 @@ describe('StimulusTaskPage', () => {
     const user = userEvent.setup()
     render(
       <StimulusTaskPage
+        sessionId="sess-1"
         cameraAllowed={false}
         onBack={vi.fn()}
         onSkip={vi.fn()}
@@ -133,6 +158,7 @@ describe('StimulusTaskPage', () => {
     const onSkip = vi.fn()
     render(
       <StimulusTaskPage
+        sessionId="sess-1"
         cameraAllowed={true}
         onBack={vi.fn()}
         onSkip={onSkip}
@@ -145,7 +171,14 @@ describe('StimulusTaskPage', () => {
     await user.click(screen.getByRole('button', { name: /skip video task/i }))
     expect(camera.stopMediaStream).toHaveBeenCalled()
     expect(onSkip).toHaveBeenCalledTimes(1)
-    expect(onSkip.mock.calls[0][0].media_uploaded).toBe(false)
+    const payload = onSkip.mock.calls[0][0] as {
+      media_uploaded: boolean
+      session_id: string
+      frames?: unknown
+    }
+    expect(payload.media_uploaded).toBe(false)
+    expect(payload.session_id).toBe('sess-1')
+    expect(payload.frames).toBeUndefined()
   })
 
   it('pauses tracking on pause and does not upload on play/ended', async () => {
@@ -153,6 +186,7 @@ describe('StimulusTaskPage', () => {
     vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())
     render(
       <StimulusTaskPage
+        sessionId="sess-1"
         cameraAllowed={true}
         onBack={vi.fn()}
         onSkip={vi.fn()}

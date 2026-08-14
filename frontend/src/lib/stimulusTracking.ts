@@ -1,6 +1,6 @@
 /**
- * In-memory stimulus tracking records (Phase 4B).
- * Numeric observations only — never frames, never uploaded, never persisted.
+ * In-memory stimulus tracking (Phase 4B/4C).
+ * Numeric observations only — never frames, never persisted to disk.
  */
 
 import { estimateHeadPose, type NormLandmark } from './cameraQuality'
@@ -27,12 +27,31 @@ export type TrackingFrame = {
 export type TrackingSessionSummary = {
   sample_count: number
   duration_ms: number
-  fraction_tracking_ok: number
-  fraction_one_face: number
+  tracking_ratio: number
+  single_face_ratio: number
+  dropped_frame_ratio: number
+  valid_tracking_duration_ms: number
+  task_completed: boolean
   mean_abs_yaw_deg: number
   mean_abs_pitch_deg: number
   mean_blink_estimate: number | null
-  /** Frames never leave the tab. */
+  media_uploaded: false
+}
+
+/** JSON-only wire format. No frames, images, or landmarks. */
+export type FeaturePayload = {
+  session_id: string
+  task_version: string
+  sample_count: number
+  duration_ms: number
+  tracking_ratio: number
+  single_face_ratio: number
+  dropped_frame_ratio: number
+  valid_tracking_duration_ms: number
+  task_completed: boolean
+  mean_abs_yaw_deg: number
+  mean_abs_pitch_deg: number
+  mean_blink_estimate: number | null
   media_uploaded: false
 }
 
@@ -44,8 +63,11 @@ export function emptyTrackingSummary(
   return {
     sample_count: 0,
     duration_ms: durationMs,
-    fraction_tracking_ok: 0,
-    fraction_one_face: 0,
+    tracking_ratio: 0,
+    single_face_ratio: 0,
+    dropped_frame_ratio: 0,
+    valid_tracking_duration_ms: 0,
+    task_completed: false,
     mean_abs_yaw_deg: 0,
     mean_abs_pitch_deg: 0,
     mean_blink_estimate: null,
@@ -79,13 +101,40 @@ export function frameFromDetection(
   }
 }
 
-/** Summarize an in-memory frame buffer for Phase 4C. Does not I/O. */
+function validTrackingDurationMs(frames: TrackingFrame[]): number {
+  let acc = 0
+  for (let i = 1; i < frames.length; i += 1) {
+    const prev = frames[i - 1]!
+    const cur = frames[i]!
+    const dt = cur.timestamp - prev.timestamp
+    if (dt > 0 && cur.tracking_ok) acc += dt
+  }
+  return Math.round(acc)
+}
+
+export type SummarizeOpts = {
+  taskCompleted?: boolean
+  tickAttempts?: number
+  tickFailures?: number
+}
+
+/** Summarize then the caller must drop the frame buffer. Does not I/O. */
 export function summarizeTrackingFrames(
   frames: TrackingFrame[],
   durationMs: number,
+  opts: SummarizeOpts = {},
 ): TrackingSessionSummary {
   const n = frames.length
-  if (n === 0) return emptyTrackingSummary(durationMs)
+  const attempts = Math.max(0, opts.tickAttempts ?? n)
+  const failures = Math.max(0, opts.tickFailures ?? 0)
+  if (n === 0) {
+    const empty = emptyTrackingSummary(durationMs)
+    return {
+      ...empty,
+      dropped_frame_ratio: attempts > 0 ? failures / attempts : 0,
+      task_completed: Boolean(opts.taskCompleted),
+    }
+  }
   let ok = 0
   let single = 0
   let absYaw = 0
@@ -106,14 +155,40 @@ export function summarizeTrackingFrames(
       blinkN += 1
     }
   }
+  const validMs = validTrackingDurationMs(frames)
   return {
     sample_count: n,
     duration_ms: durationMs,
-    fraction_tracking_ok: ok / n,
-    fraction_one_face: single / n,
+    tracking_ratio: ok / n,
+    single_face_ratio: single / n,
+    dropped_frame_ratio: attempts > 0 ? Math.min(1, failures / attempts) : 0,
+    valid_tracking_duration_ms: Math.min(validMs, durationMs),
+    task_completed: Boolean(opts.taskCompleted),
     mean_abs_yaw_deg: poseN ? absYaw / poseN : 0,
     mean_abs_pitch_deg: poseN ? absPitch / poseN : 0,
     mean_blink_estimate: blinkN ? blinkSum / blinkN : null,
+    media_uploaded: false,
+  }
+}
+
+export function buildFeaturePayload(
+  sessionId: string,
+  taskVersion: string,
+  summary: TrackingSessionSummary,
+): FeaturePayload {
+  return {
+    session_id: sessionId,
+    task_version: taskVersion,
+    sample_count: summary.sample_count,
+    duration_ms: summary.duration_ms,
+    tracking_ratio: summary.tracking_ratio,
+    single_face_ratio: summary.single_face_ratio,
+    dropped_frame_ratio: summary.dropped_frame_ratio,
+    valid_tracking_duration_ms: summary.valid_tracking_duration_ms,
+    task_completed: summary.task_completed,
+    mean_abs_yaw_deg: summary.mean_abs_yaw_deg,
+    mean_abs_pitch_deg: summary.mean_abs_pitch_deg,
+    mean_blink_estimate: summary.mean_blink_estimate,
     media_uploaded: false,
   }
 }

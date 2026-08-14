@@ -4,6 +4,7 @@ import {
   fetchHealth,
   getSession,
   postConsent,
+  postFeatures,
   postIntake,
 } from './api'
 
@@ -248,5 +249,48 @@ describe('session API helpers', () => {
         optional_context: null,
       }),
     ).rejects.toThrow('consent_required')
+  })
+})
+
+describe('postFeatures', () => {
+  it('POSTs JSON-only aggregates to /assessment/features', async () => {
+    const payload = {
+      session_id: 'sid-1',
+      task_version: 'social-interaction-v1',
+      sample_count: 10,
+      duration_ms: 8000,
+      tracking_ratio: 0.8,
+      single_face_ratio: 0.7,
+      dropped_frame_ratio: 0.1,
+      valid_tracking_duration_ms: 6000,
+      task_completed: true,
+      mean_abs_yaw_deg: 4,
+      mean_abs_pitch_deg: 3,
+      mean_blink_estimate: 0.2,
+      media_uploaded: false as const,
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: 'accepted',
+          quality: 'ok',
+          detail: 'numeric_features_stored',
+        }),
+      }),
+    )
+    await expect(postFeatures(payload)).resolves.toEqual({
+      status: 'accepted',
+      quality: 'ok',
+      detail: 'numeric_features_stored',
+    })
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/assessment\/features$/),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    )
   })
 })

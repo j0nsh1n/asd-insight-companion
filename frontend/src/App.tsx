@@ -6,7 +6,9 @@ import {
   fetchHealth,
   getSession,
   postConsent,
+  postFeatures,
   postIntake,
+  type FeatureIngestResult,
   type IntakePayload,
   type SessionResponse,
   type SessionStage,
@@ -21,7 +23,7 @@ import { CameraCheck } from './pages/CameraCheck'
 import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
-import type { TrackingSessionSummary } from './lib/stimulusTracking'
+import type { FeaturePayload } from './lib/stimulusTracking'
 import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
@@ -55,8 +57,8 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasStoredId, setHasStoredId] = useState(false)
-  const [trackingSummary, setTrackingSummary] =
-    useState<TrackingSessionSummary | null>(null)
+  const [featureResult, setFeatureResult] =
+    useState<FeatureIngestResult | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -151,6 +153,25 @@ function App() {
     }
   }
 
+  const handleFeatures = async (payload: FeaturePayload) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await postFeatures(payload)
+      setFeatureResult(result)
+    } catch (err) {
+      setFeatureResult(null)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Could not save numeric tracking summary',
+      )
+    } finally {
+      setBusy(false)
+      setView('session_done')
+    }
+  }
+
   const handleIntake = async (payload: IntakePayload) => {
     if (!session) return
     setBusy(true)
@@ -193,8 +214,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 4B: local
-            tracking)
+            Research-only ASD-trait prescreen prototype (Phase 4C: feature
+            ingest)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -264,14 +285,13 @@ function App() {
           />
         )}
 
-        {view === 'stimulus' && (
+        {view === 'stimulus' && session && (
           <StimulusTaskPage
-            cameraAllowed={session?.consent.camera_optional === true}
+            sessionId={session.id}
+            cameraAllowed={session.consent.camera_optional === true}
             onBack={() => setView('calibration')}
-            onSkip={(summary) => {
-              setTrackingSummary(summary)
-              setView('session_done')
-              setError(null)
+            onSkip={(payload) => {
+              void handleFeatures(payload)
             }}
           />
         )}
@@ -284,15 +304,13 @@ function App() {
               stopped in this browser.
             </p>
             <p className="muted">
-              No webcam video or images were uploaded. Local face samples stay
-              in this browser tab only and are not a diagnosis.
+              No webcam video or images were uploaded. Only anonymous numeric
+              summaries are stored. This is not a diagnosis.
             </p>
-            {trackingSummary && (
+            {featureResult && (
               <ul className="summary-list">
-                <li>Local samples: {trackingSummary.sample_count}</li>
-                <li>
-                  Media uploaded: {String(trackingSummary.media_uploaded)}
-                </li>
+                <li>Feature ingest: {featureResult.status}</li>
+                <li>Tracking quality: {featureResult.quality}</li>
               </ul>
             )}
             <div className="button-row">

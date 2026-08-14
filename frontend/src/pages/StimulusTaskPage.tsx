@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { StimulusPlayer } from '../components/StimulusPlayer'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
-import type { TrackingSessionSummary } from '../lib/stimulusTracking'
+import {
+  buildFeaturePayload,
+  type FeaturePayload,
+} from '../lib/stimulusTracking'
 import { useStimulusTracking } from '../lib/useStimulusTracking'
 
 export type StimulusTaskPageProps = {
+  sessionId: string
   onBack: () => void
   /** Non-punitive leave — same next step whether or not the clip was watched. */
-  onSkip: (summary: TrackingSessionSummary) => void
+  onSkip: (payload: FeaturePayload) => void
   /** False when optional camera consent was declined. */
   cameraAllowed?: boolean
 }
@@ -17,6 +21,7 @@ export type StimulusTaskPageProps = {
  * No upload, no disk, no scoring.
  */
 export function StimulusTaskPage({
+  sessionId,
   onBack,
   onSkip,
   cameraAllowed = false,
@@ -54,8 +59,9 @@ export function StimulusTaskPage({
     void tracking.startCamera()
   }
 
-  const leave = (next: (summary: TrackingSessionSummary) => void) => {
-    next(tracking.stopAndClear())
+  const leave = (next: (payload: FeaturePayload) => void) => {
+    const summary = tracking.stopAndClear()
+    next(buildFeaturePayload(sessionId, task.task_version, summary))
   }
 
   return (
@@ -91,6 +97,7 @@ export function StimulusTaskPage({
           onPlay={() => tracking.startLoop()}
           onPause={() => tracking.pauseLoop()}
           onEnded={() => {
+            tracking.markTaskCompleted()
             tracking.stopAndClear()
           }}
         />
