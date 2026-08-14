@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import UTC, datetime
-from typing import Literal, cast
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Literal, cast
 
 from fastapi import HTTPException
 
@@ -332,15 +334,52 @@ def complete_questionnaire(body: QuestionnaireCompleteRequest) -> SessionRespons
     return session_service.get_session(body.session_id)
 
 
+def _threshold_candidates() -> list[Path]:
+    here = Path(__file__).resolve()
+    return [
+        here.parents[3] / "shared" / "feature_quality_thresholds.json",
+        here.parents[2] / "shared" / "feature_quality_thresholds.json",
+    ]
+
+
+@lru_cache
+def _feature_quality_thresholds() -> dict[str, Any]:
+    for path in _threshold_candidates():
+        if path.is_file():
+            with path.open(encoding="utf-8") as handle:
+                data = json.load(handle)
+            if isinstance(data, dict):
+                return data
+    return {
+        "min_valid_tracking_duration_ms": 2000,
+        "min_tracking_ratio_sufficient": 0.25,
+        "min_tracking_ratio_ok": 0.55,
+        "max_dropped_frame_ratio_ok": 0.45,
+    }
+
+
 def _classify_feature_quality(
     body: FeaturePayload,
 ) -> Literal["ok", "low", "insufficient", "unavailable"]:
-    """Tracking quality only — not an autism or clinical score."""
+    """Tracking quality only — not an autism or clinical score.
+
+    Thresholds come from shared/feature_quality_thresholds.json (same file
+    the frontend exports as FEATURE_QUALITY_THRESHOLDS). Client data_quality
+    is ignored here.
+    """
+    t = _feature_quality_thresholds()
+    min_valid = int(t["min_valid_tracking_duration_ms"])
+    min_sufficient = float(t["min_tracking_ratio_sufficient"])
+    min_ok = float(t["min_tracking_ratio_ok"])
+    max_dropped = float(t["max_dropped_frame_ratio_ok"])
     if body.sample_count == 0:
         return "unavailable"
-    if body.valid_tracking_duration_ms < 2000 or body.tracking_ratio < 0.25:
+    if (
+        body.valid_tracking_duration_ms < min_valid
+        or body.tracking_ratio < min_sufficient
+    ):
         return "insufficient"
-    if body.tracking_ratio < 0.55 or body.dropped_frame_ratio > 0.45:
+    if body.tracking_ratio < min_ok or body.dropped_frame_ratio > max_dropped:
         return "low"
     return "ok"
 
@@ -349,28 +388,36 @@ def record_features(body: FeaturePayload) -> FeatureIngestResult:
     """Store aggregate numeric features. Rejects if already recorded."""
     now = _utc_now()
     quality = _classify_feature_quality(body)
+    detail = "numeric_features_stored"
+    if body.data_quality != quality:
+        detail = f"{detail};client_quality_mismatch"
     payload_json = body.model_dump_json()
-    with get_connection() as conn:
+    with get_connection(immediate=True) as conn:
         row = _require_session_row(conn, body.session_id)
         stage = SessionStage(str(row["stage"]))
         if stage != SessionStage.QUESTIONNAIRE_COMPLETE:
             raise HTTPException(status_code=403, detail="questionnaire_not_complete")
-        existing = row["feature_payload"]
-        if existing:
-            raise HTTPException(status_code=409, detail="features_already_recorded")
-        conn.execute(
+        cur = conn.execute(
             """
             UPDATE sessions SET
                 updated_at = ?,
                 feature_payload = ?,
                 feature_quality = ?,
                 feature_recorded_at = ?
-            WHERE id = ?
+            WHERE id = ? AND feature_payload IS NULL
             """,
             (now, payload_json, quality, now, body.session_id),
         )
+        if cur.rowcount != 1:
+            row = _require_session_row(conn, body.session_id)
+            stage = SessionStage(str(row["stage"]))
+            if stage != SessionStage.QUESTIONNAIRE_COMPLETE:
+                raise HTTPException(
+                    status_code=403, detail="questionnaire_not_complete"
+                )
+            raise HTTPException(status_code=409, detail="features_already_recorded")
     return FeatureIngestResult(
         status="accepted",
         quality=quality,
-        detail="numeric_features_stored",
+        detail=detail,
     )

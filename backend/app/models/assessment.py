@@ -151,6 +151,7 @@ class FeaturePayload(BaseModel):
     dropped_frame_ratio: float = Field(ge=0.0, le=1.0)
     valid_tracking_duration_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
     task_completed: bool
+    data_quality: Literal["ok", "low", "insufficient", "unavailable"]
     mean_abs_yaw_deg: float = Field(ge=0.0, le=180.0)
     mean_abs_pitch_deg: float = Field(ge=0.0, le=180.0)
     mean_blink_estimate: float | None = Field(default=None, ge=0.0, le=1.0)

@@ -129,6 +129,7 @@ export type FeaturePayload = {
   dropped_frame_ratio: number
   valid_tracking_duration_ms: number
   task_completed: boolean
+  data_quality: 'ok' | 'low' | 'insufficient' | 'unavailable'
   mean_abs_yaw_deg: number
   mean_abs_pitch_deg: number
   mean_blink_estimate: number | null

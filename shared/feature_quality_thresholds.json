@@ -1,0 +1,6 @@
+{
+  "min_valid_tracking_duration_ms": 2000,
+  "min_tracking_ratio_sufficient": 0.25,
+  "min_tracking_ratio_ok": 0.55,
+  "max_dropped_frame_ratio_ok": 0.45
+}

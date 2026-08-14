@@ -45,6 +45,7 @@ def _valid_payload(session_id: str, **overrides: Any) -> dict[str, Any]:
         "dropped_frame_ratio": 0.1,
         "valid_tracking_duration_ms": 6400,
         "task_completed": True,
+        "data_quality": "ok",
         "mean_abs_yaw_deg": 6.0,
         "mean_abs_pitch_deg": 4.0,
         "mean_blink_estimate": 0.2,
@@ -130,6 +131,7 @@ def test_features_quality_unavailable_when_no_samples(client: TestClient) -> Non
         dropped_frame_ratio=0,
         valid_tracking_duration_ms=0,
         task_completed=False,
+        data_quality="unavailable",
         mean_abs_yaw_deg=0,
         mean_abs_pitch_deg=0,
         mean_blink_estimate=None,
@@ -138,3 +140,51 @@ def test_features_quality_unavailable_when_no_samples(client: TestClient) -> Non
     assert response.status_code == 200
     assert response.json()["status"] == "accepted"
     assert response.json()["quality"] == "unavailable"
+
+
+def test_features_ignores_mismatched_client_data_quality(client: TestClient) -> None:
+    sid = _complete_questionnaire(client)
+    payload = _valid_payload(sid, data_quality="unavailable")
+    response = client.post("/api/v1/assessment/features", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "accepted"
+    assert body["quality"] == "ok"
+    assert body["detail"] == "numeric_features_stored;client_quality_mismatch"
+
+
+def test_concurrent_features_exactly_one_success(client: TestClient) -> None:
+    import json
+    import sqlite3
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    from app.db import get_db_path
+
+    sid = _complete_questionnaire(client)
+    payload = _valid_payload(sid)
+    n = 8
+
+    def post_features() -> int:
+        return client.post("/api/v1/assessment/features", json=payload).status_code
+
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        codes = [
+            f.result()
+            for f in as_completed(pool.submit(post_features) for _ in range(n))
+        ]
+
+    assert codes.count(200) == 1, codes
+    assert codes.count(409) == n - 1, codes
+    assert all(c in (200, 409) for c in codes), codes
+
+    conn = sqlite3.connect(get_db_path())
+    try:
+        row = conn.execute(
+            "SELECT feature_payload FROM sessions WHERE id = ?",
+            (sid,),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert row is not None and row[0]
+    stored = json.loads(str(row[0]))
+    assert stored == payload

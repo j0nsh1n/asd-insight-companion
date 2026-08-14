@@ -5,12 +5,12 @@
 Branch `feat/phase-4c-feature-payload`. Phase 4C posts JSON-only aggregate
 tracking features after the stimulus step. No frames. No autism score.
 
-Gates as of 2026-08-13 (Phase 4C):
+Gates as of 2026-08-13 (Phase 4C fix pass):
 
 | Gate | Result |
 |---|---|
-| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (53 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (73 tests) |
+| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (55 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (76 tests) |
 
 **No later phase started.**
 
@@ -24,6 +24,7 @@ SQLite unencrypted; CI may lag unpushed commits.
     backend/app/models/assessment.py   FeaturePayload (extra=forbid)
     backend/app/services/assessment.py record_features
     shared/stimuli_manifest.json
+    shared/feature_quality_thresholds.json
     frontend/src/lib/stimulusTracking.ts  aggregates + buildFeaturePayload
     frontend/src/lib/useStimulusTracking.ts
     frontend/src/pages/StimulusTaskPage.tsx
@@ -44,11 +45,17 @@ SQLite unencrypted; CI may lag unpushed commits.
 - FeaturePayload forbids extra fields so `frames` / `image_base64` 422.
 - `media_uploaded` must be JSON false.
 - Quality is tracking coverage (ok/low/insufficient/unavailable), not risk.
+- Thresholds live in `shared/feature_quality_thresholds.json` and are
+  exported as `FEATURE_QUALITY_THRESHOLDS`. Server recomputes quality and
+  keeps its value if the client flag disagrees.
+- `record_features` uses BEGIN IMMEDIATE and
+  `UPDATE … WHERE feature_payload IS NULL`.
 - POST allowed only after questionnaire_complete; second POST is 409.
 - 4B consent fail-closed still applies; declined camera can POST zeros.
 - Transcript fetch is text-only. No MediaRecorder / toBlob / toDataURL.
 
 ## Session Handoff
 
-2026-08-13 · `feat/phase-4c-feature-payload` · Phase 4C numeric feature
-ingest. Next: examiner gate. No later phase started.
+2026-08-13 · `feat/phase-4c-feature-payload` · Phase 4C fix pass:
+data_quality flag + shared thresholds; hardened feature write lock.
+Next: examiner gate. Phase 5 not started.

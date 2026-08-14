@@ -264,6 +264,7 @@ describe('postFeatures', () => {
       dropped_frame_ratio: 0.1,
       valid_tracking_duration_ms: 6000,
       task_completed: true,
+      data_quality: 'ok' as const,
       mean_abs_yaw_deg: 4,
       mean_abs_pitch_deg: 3,
       mean_blink_estimate: 0.2,

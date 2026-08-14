@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { FaceLandmarkerResult } from './faceLandmarker'
 import {
   buildFeaturePayload,
+  classifyFeatureQuality,
   emptyTrackingSummary,
+  FEATURE_QUALITY_THRESHOLDS,
   frameFromDetection,
   summarizeTrackingFrames,
   type TrackingFrame,
@@ -105,5 +107,59 @@ describe('stimulusTracking', () => {
     expect(summary.sample_count).toBe(0)
     expect(summary.media_uploaded).toBe(false)
     expect(summary.mean_blink_estimate).toBeNull()
+    expect(summary.data_quality).toBe('unavailable')
+  })
+
+  it('classifies empty buffer as unavailable', () => {
+    const summary = summarizeTrackingFrames([], 0)
+    expect(summary.data_quality).toBe('unavailable')
+    expect(classifyFeatureQuality(summary)).toBe('unavailable')
+  })
+
+  it('classifies a low-tracking buffer as insufficient', () => {
+    const frames: TrackingFrame[] = [
+      {
+        timestamp: 0,
+        tracking_ok: true,
+        one_face: true,
+        head_pose: { yawDeg: 1, pitchDeg: 1, rollDeg: 0 },
+        blink_estimate: 0.1,
+      },
+      {
+        timestamp: 400,
+        tracking_ok: false,
+        one_face: false,
+        head_pose: null,
+        blink_estimate: null,
+      },
+    ]
+    const summary = summarizeTrackingFrames(frames, 800)
+    expect(summary.valid_tracking_duration_ms).toBeLessThan(
+      FEATURE_QUALITY_THRESHOLDS.min_valid_tracking_duration_ms,
+    )
+    expect(summary.data_quality).toBe('insufficient')
+  })
+
+  it('classifies a well-tracked buffer as ok', () => {
+    const frames: TrackingFrame[] = [0, 1000, 2000, 3000, 4000].map((t) => ({
+      timestamp: t,
+      tracking_ok: true,
+      one_face: true,
+      head_pose: { yawDeg: 2, pitchDeg: 1, rollDeg: 0 },
+      blink_estimate: 0.15,
+    }))
+    const summary = summarizeTrackingFrames(frames, 8000, {
+      taskCompleted: true,
+      tickAttempts: 5,
+      tickFailures: 0,
+    })
+    expect(summary.tracking_ratio).toBe(1)
+    expect(summary.valid_tracking_duration_ms).toBeGreaterThanOrEqual(
+      FEATURE_QUALITY_THRESHOLDS.min_valid_tracking_duration_ms,
+    )
+    expect(summary.data_quality).toBe('ok')
+    expect(buildFeaturePayload('sid', 'social-interaction-v1', summary).data_quality).toBe(
+      'ok',
+    )
   })
 })

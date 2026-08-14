@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tracking summaries now include an explicit `data_quality` flag
+  (ok / low / insufficient / unavailable), computed from the same shared
+  thresholds the API uses. The server still classifies independently.
 - Numeric tracking summary sent after the attention clip (Phase 4C): ratios,
   valid-tracking duration, task-completed flag, and blink/head-motion
   averages only. No frames. The API accepts or rejects the JSON and reports
