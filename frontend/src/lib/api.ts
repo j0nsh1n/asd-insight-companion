@@ -1,4 +1,6 @@
-/** Typed client for the FastAPI backend (Phase 0–2). */
+/** Typed client for the FastAPI backend (Phase 0–5). */
+
+import type { ResearchSessionSummary } from '../types/assessment'
 
 export type HealthResponse = {
   status: string
@@ -291,6 +293,19 @@ export async function postFeatures(
   payload: FeaturePayload,
 ): Promise<FeatureIngestResult> {
   return postJson<FeatureIngestResult>('/api/v1/assessment/features', payload)
+}
+
+export async function fetchResearchSummary(
+  sessionId: string,
+): Promise<ResearchSessionSummary> {
+  const response = await apiFetch(
+    `/api/v1/results/${encodeURIComponent(sessionId)}`,
+    { headers: { Accept: 'application/json' } },
+  )
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json() as Promise<ResearchSessionSummary>
 }
 
 export { API_BASE_URL }

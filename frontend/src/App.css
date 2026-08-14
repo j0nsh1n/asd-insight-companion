@@ -477,3 +477,74 @@
   color: #c5d0db;
   margin: 0.65rem 0 0;
 }
+
+.safety-notice {
+  background: #3d2914;
+  border: 1px solid #c9852a;
+  border-radius: 8px;
+  color: #ffe8c2;
+  padding: 0.75rem 0.9rem;
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.result-card {
+  margin: 0 0 1rem;
+  padding: 0.85rem 0.95rem;
+  background: #1a222c;
+  border: 1px solid #2a3542;
+  border-radius: 8px;
+}
+
+.result-card h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+}
+
+.quality-status-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+
+.quality-status-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0 0 0.45rem;
+}
+
+.quality-mark {
+  flex: 0 0 5.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #9ec9f0;
+}
+
+.metric-list {
+  margin: 0.75rem 0 0;
+}
+
+.metric-list > div {
+  margin: 0 0 0.7rem;
+}
+
+.metric-list dt {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.metric-hint {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #8b98a5;
+  margin-top: 0.15rem;
+}
+
+.metric-list dd {
+  margin: 0.2rem 0 0;
+}

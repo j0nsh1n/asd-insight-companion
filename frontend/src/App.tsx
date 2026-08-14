@@ -24,6 +24,7 @@ import { Consent, type ConsentFormValues } from './pages/Consent'
 import { Intake } from './pages/Intake'
 import { Questionnaire } from './pages/Questionnaire'
 import type { FeaturePayload } from './lib/stimulusTracking'
+import { ResultsPage } from './pages/ResultsPage'
 import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
@@ -36,6 +37,7 @@ type View =
   | 'camera'
   | 'calibration'
   | 'stimulus'
+  | 'results'
   | 'session_done'
 type BackendLabel = 'checking…' | 'ok' | 'error'
 
@@ -84,6 +86,7 @@ function App() {
         next.stage === 'questionnaire_complete' &&
         (prev === 'calibration' ||
           prev === 'stimulus' ||
+          prev === 'results' ||
           prev === 'session_done')
       ) {
         return prev
@@ -168,7 +171,7 @@ function App() {
       )
     } finally {
       setBusy(false)
-      setView('session_done')
+      setView('results')
     }
   }
 
@@ -214,8 +217,8 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 4C: feature
-            ingest)
+            Research-only ASD-trait prescreen prototype (Phase 5: research
+            summary)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -293,6 +296,14 @@ function App() {
             onSkip={(payload) => {
               void handleFeatures(payload)
             }}
+          />
+        )}
+
+        {view === 'results' && session && (
+          <ResultsPage
+            sessionId={session.id}
+            loadError={error}
+            onBack={showWelcome}
           />
         )}
 

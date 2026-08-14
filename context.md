@@ -2,60 +2,59 @@
 
 ## Current State
 
-Branch `feat/phase-4c-feature-payload`. Phase 4C posts JSON-only aggregate
-tracking features after the stimulus step. No frames. No autism score.
+Branch `feat/phase-5-research-results`. Phase 5 adds a read-only
+research-session summary after the stimulus step. Data quality and
+descriptive task notes only. No autism score, risk, or probability.
 
-Gates as of 2026-08-13 (Phase 4C fix pass):
+Gates as of 2026-08-14 (Phase 5):
 
 | Gate | Result |
 |---|---|
-| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (55 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (76 tests) |
+| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (64 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (86 tests) |
 
-**No later phase started.**
-
-Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank version
-changes mid-dev; questionnaire score in API but not UI; no withdraw/TTL/auth;
-SQLite unencrypted; CI may lag unpushed commits.
+Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
+version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
+calibration is client-only so results always show not_available;
+CI may lag unpushed commits.
 
 ## Repo Landmarks
 
+    backend/app/api/v1/results.py      GET /results/{session_id}
+    backend/app/models/result.py       ResearchSessionSummary (extra=forbid)
+    backend/app/services/results_service.py
+    backend/app/services/data_quality_service.py
+    backend/app/services/safety_service.py
+    frontend/src/pages/ResultsPage.tsx
+    frontend/src/lib/api.ts            fetchResearchSummary
+    frontend/src/types/assessment.ts
     backend/app/api/v1/assessment.py   questionnaire + POST /features
-    backend/app/models/assessment.py   FeaturePayload (extra=forbid)
-    backend/app/services/assessment.py record_features
-    shared/stimuli_manifest.json
     shared/feature_quality_thresholds.json
-    frontend/src/lib/stimulusTracking.ts  aggregates + buildFeaturePayload
-    frontend/src/lib/useStimulusTracking.ts
-    frontend/src/pages/StimulusTaskPage.tsx
-    frontend/src/lib/api.ts            postFeatures
 
 ## Domain Model
 
     sessions 1 -- * question_responses
-    Stage still ends at questionnaire_complete.
-    After that (client): camera → calibration → stimulus → POST /features
-         → session_done.
-    feature_payload / feature_quality / feature_recorded_at on sessions
-    (numeric JSON only). Per-frame buffer is cleared in the browser after
-    summarize.
+    Server stage still ends at questionnaire_complete.
+    Client after that: camera → calibration → stimulus → POST /features
+         → GET /results/{session_id}.
+    Results are computed from stored questionnaire + feature_payload only.
+    GET does not write. No scoring endpoint.
 
 ## Non-Obvious Decisions
 
-- FeaturePayload forbids extra fields so `frames` / `image_base64` 422.
-- `media_uploaded` must be JSON false.
-- Quality is tracking coverage (ok/low/insufficient/unavailable), not risk.
-- Thresholds live in `shared/feature_quality_thresholds.json` and are
-  exported as `FEATURE_QUALITY_THRESHOLDS`. Server recomputes quality and
-  keeps its value if the client flag disagrees.
-- `record_features` uses BEGIN IMMEDIATE and
-  `UPDATE … WHERE feature_payload IS NULL`.
-- POST allowed only after questionnaire_complete; second POST is 409.
-- 4B consent fail-closed still applies; declined camera can POST zeros.
-- Transcript fetch is text-only. No MediaRecorder / toBlob / toDataURL.
+- Schemas live in `models/` (not `schemas/`); API under `api/v1/`;
+  client is `frontend/src/lib/api.ts`.
+- Blink field is existing `mean_blink_estimate`, not a blink rate.
+- Calibration is never stored, so `calibration_status` is always
+  `not_available`.
+- Server-stored `feature_quality` wins over the client payload flag.
+- Safety notice may say "not a diagnosis" / "autistic"; explanation
+  templates avoid those exact prohibited terms.
+- Quality is session completeness, not model confidence.
+- FeaturePayload still forbids extra fields; `media_uploaded` is false.
 
 ## Session Handoff
 
-2026-08-13 · `feat/phase-4c-feature-payload` · Phase 4C fix pass:
-data_quality flag + shared thresholds; hardened feature write lock.
-Next: examiner gate. Phase 5 not started.
+2026-08-14 · `feat/phase-5-research-results` · Phase 5 research-session
+summary implemented (GET + Results page, no diagnostic score).
+Next: examiner gate. Phase 6 not started.

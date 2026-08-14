@@ -37,6 +37,7 @@ vi.mock('./lib/api', async () => {
     postConsent: vi.fn(),
     postIntake: vi.fn(),
     postFeatures: vi.fn(),
+    fetchResearchSummary: vi.fn(),
   }
 })
 
@@ -47,6 +48,7 @@ const mocked = {
   postConsent: vi.mocked(api.postConsent),
   postIntake: vi.mocked(api.postIntake),
   postFeatures: vi.mocked(api.postFeatures),
+  fetchResearchSummary: vi.mocked(api.fetchResearchSummary),
 }
 
 const baseSession = (
@@ -90,10 +92,56 @@ describe('App Phase 1 flow', () => {
     mocked.postConsent.mockReset()
     mocked.postIntake.mockReset()
     mocked.postFeatures.mockReset()
+    mocked.fetchResearchSummary.mockReset()
     mocked.postFeatures.mockResolvedValue({
       status: 'accepted',
       quality: 'unavailable',
       detail: 'numeric_features_stored',
+    })
+    mocked.fetchResearchSummary.mockResolvedValue({
+      session_id: '11111111-2222-3333-4444-555555555555',
+      status: 'partial',
+      data_quality: {
+        questionnaire_completed: true,
+        questionnaire_item_count: 10,
+        video_task_status: 'skipped',
+        tracking_ratio: 0,
+        calibration_status: 'not_available',
+        overall_quality_label: 'limited',
+      },
+      research_task_observations: {
+        questionnaire_response_pattern: {
+          placeholder_score: 20,
+          mean_response_time_ms: 1000,
+          response_time_variability_ms: 50,
+          answer_change_count: 0,
+        },
+        video_task_summary: {
+          task_completed: false,
+          valid_tracking_duration_ms: 0,
+          mean_blink_estimate: null,
+          head_motion_summary: null,
+          attention_estimates_available: false,
+        },
+      },
+      explanation: {
+        summary:
+          'The video task was skipped, so no video-task observations are shown.',
+        available_data: ['Self-report questionnaire answers and response timing'],
+        unavailable_or_limited_data: ['Video task was skipped'],
+        limitations: [
+          'The self-report questionnaire is a development placeholder, not a validated clinical instrument.',
+          'One short research task cannot assess autism.',
+        ],
+        next_steps: [
+          'If you have questions or ongoing concerns, consider discussing them with a qualified healthcare professional.',
+        ],
+      },
+      safety: {
+        research_only: true,
+        not_a_diagnosis: true,
+        no_clinical_probability_provided: true,
+      },
     })
     mocked.fetchHealth.mockResolvedValue({
       status: 'ok',
@@ -284,10 +332,15 @@ describe('App Phase 1 flow', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /session complete/i }),
+        screen.getByRole('heading', { name: /research-session summary/i }),
       ).toBeInTheDocument()
     })
+    expect(
+      screen.getByRole('note', { name: /research session notice/i }),
+    ).toHaveTextContent(/not a diagnosis/i)
+    expect(screen.getByLabelText(/video task: skipped/i)).toBeInTheDocument()
     expect(mocked.postFeatures).toHaveBeenCalled()
+    expect(mocked.fetchResearchSummary).toHaveBeenCalled()
     const sent = mocked.postFeatures.mock.calls[0][0] as {
       media_uploaded: boolean
       frames?: unknown
