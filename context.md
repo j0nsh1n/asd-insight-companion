@@ -57,6 +57,6 @@ CI may lag unpushed commits.
 
 ## Session Handoff
 
-2026-08-14 · `feat/phase-5-research-results` · Phase 5 fix pass: legacy
-feature payloads skip instead of 500; non-finite features stay 422;
-placeholder_score removed from results payload/UI. Phase 6 not started.
+2026-08-14 · `feat/phase-5-research-results` · Mobile layout for the
+research session (safe area, 44px taps, stacked actions). Phase 6 not
+started.
