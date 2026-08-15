@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -93,6 +94,41 @@ def test_features_rejects_ratio_out_of_range(client: TestClient) -> None:
     payload = _valid_payload(sid, tracking_ratio=1.5)
     response = client.post("/api/v1/assessment/features", json=payload)
     assert response.status_code == 422
+
+
+def _post_features_raw(
+    client: TestClient, payload: dict[str, Any], *, tracking_token: str
+) -> Any:
+    raw = json.dumps(payload).replace(
+        '"tracking_ratio": 0.8', f'"tracking_ratio": {tracking_token}', 1
+    )
+    return client.post(
+        "/api/v1/assessment/features",
+        content=raw,
+        headers={"Content-Type": "application/json"},
+    )
+
+
+def test_features_rejects_nan_tracking_ratio(client: TestClient) -> None:
+    sid = _complete_questionnaire(client)
+    response = _post_features_raw(client, _valid_payload(sid), tracking_token="NaN")
+    assert response.status_code == 422
+    body = response.json()
+    blob = json.dumps(body).lower()
+    assert "tracking_ratio" in blob
+    assert "nan" in blob or "finite" in blob or "valid" in blob
+
+
+def test_features_rejects_infinity_tracking_ratio(client: TestClient) -> None:
+    sid = _complete_questionnaire(client)
+    response = _post_features_raw(
+        client, _valid_payload(sid), tracking_token="Infinity"
+    )
+    assert response.status_code == 422
+    body = response.json()
+    blob = json.dumps(body).lower()
+    assert "tracking_ratio" in blob
+    assert "inf" in blob or "finite" in blob or "valid" in blob
 
 
 def test_features_rejects_before_questionnaire_complete(client: TestClient) -> None:

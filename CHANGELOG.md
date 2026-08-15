@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Research-session summary after the attention clip (Phase 5): a Results
+  page and `GET /api/v1/results/{session_id}` combine the stored
+  questionnaire and numeric tracking notes, report session completeness,
+  and list limitations. This is not a diagnosis, risk score, or clinical
+  probability.
 - Tracking summaries now include an explicit `data_quality` flag
   (ok / low / insufficient / unavailable), computed from the same shared
   thresholds the API uses. The server still classifies independently.

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createSession,
   fetchHealth,
+  fetchResearchSummary,
   getSession,
   postConsent,
   postFeatures,
@@ -291,6 +292,53 @@ describe('postFeatures', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify(payload),
+      }),
+    )
+  })
+})
+
+describe('fetchResearchSummary', () => {
+  it('GETs /results/{session_id} and returns the summary', async () => {
+    const body = {
+      session_id: 'sid-1',
+      status: 'partial',
+      data_quality: {
+        questionnaire_completed: true,
+        questionnaire_item_count: 10,
+        video_task_status: 'skipped',
+        tracking_ratio: 0,
+        calibration_status: 'not_available',
+        overall_quality_label: 'limited',
+      },
+      research_task_observations: {
+        questionnaire_response_pattern: null,
+        video_task_summary: null,
+      },
+      explanation: {
+        summary: 'The video task was skipped.',
+        available_data: [],
+        unavailable_or_limited_data: ['Video task was skipped'],
+        limitations: [],
+        next_steps: [],
+      },
+      safety: {
+        research_only: true,
+        not_a_diagnosis: true,
+        no_clinical_probability_provided: true,
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => body,
+      }),
+    )
+    await expect(fetchResearchSummary('sid-1')).resolves.toEqual(body)
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/results\/sid-1$/),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Accept: 'application/json' }),
       }),
     )
   })
