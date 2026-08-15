@@ -79,7 +79,7 @@ export function ResultsPage({
           <p>{summary.explanation.summary}</p>
           <DataQualityCard quality={summary.data_quality} />
           <section className="result-card" aria-labelledby="available-title">
-            <h2 id="available-title">What this session includes</h2>
+            <h3 id="available-title">What this session includes</h3>
             {summary.explanation.available_data.length > 0 ? (
               <ul>
                 {summary.explanation.available_data.map((line) => (
@@ -91,7 +91,7 @@ export function ResultsPage({
             )}
           </section>
           <section className="result-card" aria-labelledby="limited-title">
-            <h2 id="limited-title">Unavailable or limited data</h2>
+            <h3 id="limited-title">Unavailable or limited data</h3>
             <ul>
               {summary.explanation.unavailable_or_limited_data.map((line) => (
                 <li key={line}>{line}</li>
@@ -102,7 +102,7 @@ export function ResultsPage({
             observations={summary.research_task_observations}
           />
           <section className="result-card" aria-labelledby="limits-title">
-            <h2 id="limits-title">Limitations</h2>
+            <h3 id="limits-title">Limitations</h3>
             <ul>
               {summary.explanation.limitations.map((line) => (
                 <li key={line}>{line}</li>
@@ -110,7 +110,7 @@ export function ResultsPage({
             </ul>
           </section>
           <section className="result-card" aria-labelledby="next-title">
-            <h2 id="next-title">If you have questions</h2>
+            <h3 id="next-title">If you have questions</h3>
             {summary.explanation.next_steps.map((line) => (
               <p key={line}>{line}</p>
             ))}

@@ -10,7 +10,7 @@ Gates as of 2026-08-14 (Phase 5):
 
 | Gate | Result |
 |---|---|
-| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (64 tests) |
+| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (67 tests) |
 | Frontend `oxlint` / `vitest` / `build` | pass (86 tests) |
 
 Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
@@ -52,9 +52,11 @@ CI may lag unpushed commits.
   templates avoid those exact prohibited terms.
 - Quality is session completeness, not model confidence.
 - FeaturePayload still forbids extra fields; `media_uploaded` is false.
+- The questionnaire total is stored server-side (`questionnaire_score`)
+  and never displayed to participants or returned in the results payload.
 
 ## Session Handoff
 
-2026-08-14 · `feat/phase-5-research-results` · Phase 5 research-session
-summary implemented (GET + Results page, no diagnostic score).
-Next: examiner gate. Phase 6 not started.
+2026-08-14 · `feat/phase-5-research-results` · Phase 5 fix pass: legacy
+feature payloads skip instead of 500; non-finite features stay 422;
+placeholder_score removed from results payload/UI. Phase 6 not started.

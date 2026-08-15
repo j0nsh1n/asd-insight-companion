@@ -9,7 +9,7 @@ export function ResearchTaskSummary({ observations }: ResearchTaskSummaryProps) 
   const v = observations.video_task_summary
   return (
     <section className="result-card" aria-labelledby="obs-title">
-      <h2 id="obs-title">Research-task measurements</h2>
+      <h3 id="obs-title">Research-task measurements</h3>
       <p className="muted">
         These are descriptive notes from this prototype session. They are not
         clinical evidence.
@@ -17,16 +17,6 @@ export function ResearchTaskSummary({ observations }: ResearchTaskSummaryProps) 
 
       {q ? (
         <dl className="metric-list">
-          <div>
-            <dt>
-              Placeholder questionnaire total
-              <span className="metric-hint">
-                Sum from the development placeholder items, not a validated
-                instrument score.
-              </span>
-            </dt>
-            <dd>{q.placeholder_score}</dd>
-          </div>
           <div>
             <dt>
               Mean time on each question

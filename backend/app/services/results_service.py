@@ -7,6 +7,7 @@ import math
 from typing import Any
 
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from app.db import get_connection
 from app.models.assessment import FeaturePayload
@@ -47,10 +48,13 @@ def _variability_ms(times: list[int]) -> float:
 def _load_feature_payload(raw: Any) -> FeaturePayload | None:
     if raw is None or raw == "":
         return None
-    data = json.loads(str(raw))
-    if not isinstance(data, dict):
+    try:
+        data = json.loads(str(raw))
+        if not isinstance(data, dict):
+            return None
+        return FeaturePayload.model_validate(data)
+    except json.JSONDecodeError, ValidationError:
         return None
-    return FeaturePayload.model_validate(data)
 
 
 def build_research_session_summary(session_id: str) -> ResearchSessionSummary:
@@ -88,7 +92,6 @@ def build_research_session_summary(session_id: str) -> ResearchSessionSummary:
         times = _response_times(cleaned)
         timing = questionnaire.timing
         q_pattern = QuestionnaireResponsePattern(
-            placeholder_score=int(questionnaire.score or 0),
             mean_response_time_ms=float(
                 timing.mean_total_time_on_question_ms if timing else 0.0
             ),

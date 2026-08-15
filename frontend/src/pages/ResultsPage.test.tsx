@@ -45,7 +45,6 @@ function summary(
     },
     research_task_observations: {
       questionnaire_response_pattern: {
-        placeholder_score: 22,
         mean_response_time_ms: 1400,
         response_time_variability_ms: 180,
         answer_change_count: 1,
@@ -128,7 +127,6 @@ describe('ResultsPage', () => {
         },
         research_task_observations: {
           questionnaire_response_pattern: {
-            placeholder_score: 22,
             mean_response_time_ms: 1400,
             response_time_variability_ms: 180,
             answer_change_count: 1,
@@ -188,8 +186,11 @@ describe('ResultsPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/placeholder questionnaire total/i)).toBeInTheDocument()
+      expect(screen.getByText(/mean time on each question/i)).toBeInTheDocument()
     })
+    expect(
+      screen.queryByText(/placeholder questionnaire total/i),
+    ).not.toBeInTheDocument()
 
     const page = container.textContent?.toLowerCase() ?? ''
     for (const phrase of BANNED_PHRASES) {

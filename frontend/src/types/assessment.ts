@@ -24,7 +24,6 @@ export type DataQualityBlock = {
 }
 
 export type QuestionnaireResponsePattern = {
-  placeholder_score: number
   mean_response_time_ms: number
   response_time_variability_ms: number
   answer_change_count: number

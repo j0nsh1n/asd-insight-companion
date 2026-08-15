@@ -111,7 +111,6 @@ describe('App Phase 1 flow', () => {
       },
       research_task_observations: {
         questionnaire_response_pattern: {
-          placeholder_score: 20,
           mean_response_time_ms: 1000,
           response_time_variability_ms: 50,
           answer_change_count: 0,

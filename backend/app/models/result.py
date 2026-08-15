@@ -25,7 +25,6 @@ class DataQualityBlock(BaseModel):
 class QuestionnaireResponsePattern(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    placeholder_score: int
     mean_response_time_ms: float = Field(ge=0)
     response_time_variability_ms: float = Field(ge=0)
     answer_change_count: int = Field(ge=0)

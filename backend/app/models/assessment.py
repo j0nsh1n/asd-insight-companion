@@ -146,15 +146,17 @@ class FeaturePayload(BaseModel):
     task_version: str = Field(min_length=1, max_length=64)
     sample_count: int = Field(ge=0, le=1_000_000)
     duration_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
-    tracking_ratio: float = Field(ge=0.0, le=1.0)
-    single_face_ratio: float = Field(ge=0.0, le=1.0)
-    dropped_frame_ratio: float = Field(ge=0.0, le=1.0)
+    tracking_ratio: float = Field(ge=0.0, le=1.0, allow_inf_nan=False)
+    single_face_ratio: float = Field(ge=0.0, le=1.0, allow_inf_nan=False)
+    dropped_frame_ratio: float = Field(ge=0.0, le=1.0, allow_inf_nan=False)
     valid_tracking_duration_ms: int = Field(ge=0, le=MAX_ITEM_DURATION_MS)
     task_completed: bool
     data_quality: Literal["ok", "low", "insufficient", "unavailable"]
-    mean_abs_yaw_deg: float = Field(ge=0.0, le=180.0)
-    mean_abs_pitch_deg: float = Field(ge=0.0, le=180.0)
-    mean_blink_estimate: float | None = Field(default=None, ge=0.0, le=1.0)
+    mean_abs_yaw_deg: float = Field(ge=0.0, le=180.0, allow_inf_nan=False)
+    mean_abs_pitch_deg: float = Field(ge=0.0, le=180.0, allow_inf_nan=False)
+    mean_blink_estimate: float | None = Field(
+        default=None, ge=0.0, le=1.0, allow_inf_nan=False
+    )
     media_uploaded: Literal[False]
 
     @field_validator("session_id", "task_version")

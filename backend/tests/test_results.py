@@ -53,11 +53,31 @@ def test_results_complete_questionnaire_and_usable_video(client: TestClient) -> 
     )
     assert body["safety"]["not_a_diagnosis"] is True
     assert body["safety"]["no_clinical_probability_provided"] is True
-    assert "score" not in body
+    assert "score" not in json.dumps(body).lower()
     assert "risk" not in json.dumps(body).lower()
     blob = _explanation_blob(body)
     for term in PROHIBITED:
         assert term not in blob, term
+
+
+def test_results_legacy_payload_without_data_quality_is_skipped(
+    client: TestClient,
+) -> None:
+    sid = _complete_questionnaire(client)
+    legacy = _valid_payload(sid)
+    del legacy["data_quality"]
+    from app.db import get_connection
+
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE sessions SET feature_payload = ? WHERE id = ?",
+            (json.dumps(legacy), sid),
+        )
+    response = client.get(f"/api/v1/results/{sid}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data_quality"]["video_task_status"] == "skipped"
+    assert "score" not in json.dumps(body).lower()
 
 
 def test_results_no_features_row_is_partial_skip(client: TestClient) -> None:
@@ -117,7 +137,7 @@ def test_results_low_tracking_is_limited(client: TestClient) -> None:
     assert body["status"] == "partial"
     assert body["data_quality"]["overall_quality_label"] == "limited"
     assert "risk" not in json.dumps(body).lower()
-    assert "score" not in body
+    assert "score" not in json.dumps(body).lower()
     blob = _explanation_blob(body)
     for term in PROHIBITED:
         assert term not in blob, term
@@ -145,7 +165,7 @@ def test_results_insufficient_tracking_is_not_a_clinical_score(
     assert body["data_quality"]["overall_quality_label"] == "insufficient"
     video = body["research_task_observations"]["video_task_summary"]
     assert video["attention_estimates_available"] is False
-    assert "score" not in body
+    assert "score" not in json.dumps(body).lower()
     assert "risk" not in json.dumps(body).lower()
     blob = _explanation_blob(body)
     for term in PROHIBITED:

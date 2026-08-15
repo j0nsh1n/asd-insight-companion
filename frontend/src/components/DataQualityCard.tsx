@@ -56,7 +56,7 @@ export function DataQualityCard({ quality }: DataQualityCardProps) {
 
   return (
     <section className="result-card" aria-labelledby="dq-title">
-      <h2 id="dq-title">Session completeness</h2>
+      <h3 id="dq-title">Session completeness</h3>
       <p className="muted">
         This is data quality for the stored research tasks, not clinical
         confidence.
