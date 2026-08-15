@@ -103,7 +103,7 @@ describe('ResultsPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByRole('note', { name: /research session notice/i }),
-    ).toHaveTextContent(/not a diagnosis/i)
+    ).toHaveTextContent(/does not diagnose autism/i)
 
     await waitFor(() => {
       expect(
@@ -224,5 +224,6 @@ describe('ResultsPage', () => {
     expect(
       screen.getByRole('note', { name: /research session notice/i }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^retry$/i })).toBeInTheDocument()
   })
 })

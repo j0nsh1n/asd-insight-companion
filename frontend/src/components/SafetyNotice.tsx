@@ -6,8 +6,8 @@ export function SafetyNotice() {
   return (
     <aside className="safety-notice" role="note" aria-label="Research session notice">
       <strong>
-        Research prototype only — this session summary is not a diagnosis and
-        cannot determine whether someone is autistic.
+        Research prototype only. This tool does not diagnose autism and cannot
+        determine whether someone is autistic.
       </strong>
     </aside>
   )

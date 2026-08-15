@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ResearchDisclaimer } from './components/ResearchDisclaimer'
 import {
   API_BASE_URL,
@@ -8,11 +8,17 @@ import {
   postConsent,
   postFeatures,
   postIntake,
-  type FeatureIngestResult,
   type IntakePayload,
   type SessionResponse,
-  type SessionStage,
 } from './lib/api'
+import {
+  type AssessmentView,
+  VIEW_ANNOUNCEMENTS,
+  canRequestResults,
+  resolveView,
+  viewFromServerStage,
+} from './lib/assessmentFlow'
+import { friendlyError, isFeaturesAlreadyRecorded } from './lib/friendlyError'
 import {
   clearSessionId,
   loadSessionId,
@@ -29,38 +35,22 @@ import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
-type View =
-  | 'welcome'
-  | 'consent'
-  | 'intake'
-  | 'questionnaire'
-  | 'camera'
-  | 'calibration'
-  | 'stimulus'
-  | 'results'
-  | 'session_done'
 type BackendLabel = 'checking…' | 'ok' | 'error'
-
-function stageToView(stage: SessionStage): View {
-  if (stage === 'created') return 'consent'
-  if (stage === 'consented') return 'intake'
-  if (stage === 'intake_complete' || stage === 'questionnaire_in_progress') {
-    return 'questionnaire'
-  }
-  // After questionnaire: camera → calibration → stimulus (client-local steps).
-  if (stage === 'questionnaire_complete') return 'camera'
-  return 'welcome'
-}
+type CalibrationOutcome = 'passed' | 'limited'
 
 function App() {
   const [backendLabel, setBackendLabel] = useState<BackendLabel>('checking…')
   const [session, setSession] = useState<SessionResponse | null>(null)
-  const [view, setView] = useState<View>('welcome')
+  const [view, setView] = useState<AssessmentView>('welcome')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasStoredId, setHasStoredId] = useState(false)
-  const [featureResult, setFeatureResult] =
-    useState<FeatureIngestResult | null>(null)
+  const [pendingPayload, setPendingPayload] = useState<FeaturePayload | null>(
+    null,
+  )
+  const [calibrationOutcome, setCalibrationOutcome] =
+    useState<CalibrationOutcome>('limited')
+  const submitLock = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -81,17 +71,13 @@ function App() {
     const stored = saveSessionId(next.id)
     setSession(next)
     setView((prev) => {
-      // Preserve late client-only steps after questionnaire_complete.
-      if (
-        next.stage === 'questionnaire_complete' &&
-        (prev === 'calibration' ||
-          prev === 'stimulus' ||
-          prev === 'results' ||
-          prev === 'session_done')
-      ) {
-        return prev
+      if (next.stage === 'questionnaire_complete') {
+        if (prev === 'welcome') {
+          return next.features_recorded ? 'results' : 'camera'
+        }
+        return resolveView(next, prev)
       }
-      return stageToView(next.stage)
+      return viewFromServerStage(next.stage)
     })
     setHasStoredId(stored)
     setError(null)
@@ -102,14 +88,28 @@ function App() {
     setError(null)
   }, [])
 
+  const startOver = useCallback(() => {
+    clearSessionId()
+    setSession(null)
+    setView('welcome')
+    setError(null)
+    setPendingPayload(null)
+    setCalibrationOutcome('limited')
+    setHasStoredId(false)
+    submitLock.current = false
+  }, [])
+
   const handleStart = async () => {
+    if (busy) return
     setBusy(true)
     setError(null)
+    setPendingPayload(null)
+    setCalibrationOutcome('limited')
     try {
       const created = await createSession()
       applySession(created)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start session')
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -132,64 +132,71 @@ function App() {
       setHasStoredId(false)
       setSession(null)
       setView('welcome')
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Could not resume session (it may have expired)',
-      )
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
   }
 
   const handleConsent = async (values: ConsentFormValues) => {
-    if (!session) return
+    if (!session || busy) return
     setBusy(true)
     setError(null)
     try {
       const next = await postConsent(session.id, values)
       applySession(next)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Consent failed')
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
   }
 
   const handleFeatures = async (payload: FeaturePayload) => {
+    if (submitLock.current) return
+    submitLock.current = true
+    setPendingPayload(payload)
     setBusy(true)
     setError(null)
+    setView('submitting_features')
     try {
-      const result = await postFeatures(payload)
-      setFeatureResult(result)
+      await postFeatures(payload)
+      if (session) {
+        setSession({ ...session, features_recorded: true })
+      }
+      setView('results')
     } catch (err) {
-      setFeatureResult(null)
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Could not save numeric tracking summary',
-      )
+      if (isFeaturesAlreadyRecorded(err)) {
+        if (session) {
+          setSession({ ...session, features_recorded: true })
+        }
+        setView('results')
+      } else {
+        setError(friendlyError(err))
+        setView('feature_error')
+      }
     } finally {
       setBusy(false)
-      setView('results')
+      submitLock.current = false
     }
   }
 
   const handleIntake = async (payload: IntakePayload) => {
-    if (!session) return
+    if (!session || busy) return
     setBusy(true)
     setError(null)
     try {
       const next = await postIntake(session.id, payload)
       applySession(next)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Intake failed')
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
   }
 
   const prefs = session?.intake?.accessibility_prefs
+  const shown = resolveView(session, view)
   const shellClasses = [
     'app-shell',
     prefs?.large_text ? 'a11y-large-text' : '',
@@ -217,8 +224,7 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 5: research
-            summary)
+            Research-only ASD-trait prescreen prototype (Phase 6)
           </p>
           {session && (
             <p className="muted session-meta">
@@ -227,8 +233,11 @@ function App() {
             </p>
           )}
         </header>
+        <div className="sr-only" role="status" aria-live="polite">
+          Current step: {VIEW_ANNOUNCEMENTS[shown]}
+        </div>
 
-        {view === 'welcome' && (
+        {shown === 'welcome' && (
           <Welcome
             backendLabel={backendLabel}
             busy={busy}
@@ -238,7 +247,7 @@ function App() {
           />
         )}
 
-        {view === 'consent' && session && (
+        {shown === 'consent' && session && (
           <Consent
             busy={busy}
             error={error}
@@ -247,7 +256,7 @@ function App() {
           />
         )}
 
-        {view === 'intake' && session && (
+        {shown === 'intake' && session && (
           <Intake
             busy={busy}
             error={error}
@@ -257,7 +266,7 @@ function App() {
           />
         )}
 
-        {view === 'questionnaire' && session && (
+        {shown === 'questionnaire' && session && (
           <Questionnaire
             sessionId={session.id}
             initialSession={session}
@@ -266,7 +275,7 @@ function App() {
           />
         )}
 
-        {view === 'camera' && session && (
+        {shown === 'camera' && session && (
           <CameraCheck
             cameraAllowed={session.consent.camera_optional === true}
             onBack={showWelcome}
@@ -277,18 +286,19 @@ function App() {
           />
         )}
 
-        {view === 'calibration' && (
+        {shown === 'calibration' && (
           <Calibration
             cameraAllowed={session?.consent.camera_optional === true}
             onBack={() => setView('camera')}
-            onComplete={() => {
+            onComplete={(outcome) => {
+              setCalibrationOutcome(outcome)
               setView('stimulus')
               setError(null)
             }}
           />
         )}
 
-        {view === 'stimulus' && session && (
+        {shown === 'stimulus' && session && (
           <StimulusTaskPage
             sessionId={session.id}
             cameraAllowed={session.consent.camera_optional === true}
@@ -299,37 +309,72 @@ function App() {
           />
         )}
 
-        {view === 'results' && session && (
-          <ResultsPage
-            sessionId={session.id}
-            loadError={error}
-            onBack={showWelcome}
-          />
+        {shown === 'submitting_features' && (
+          <section className="panel" aria-labelledby="submit-title">
+            <h2 id="submit-title">Saving numeric notes</h2>
+            <p role="status" aria-live="polite">
+              Saving anonymous numeric tracking notes. Camera sampling has
+              stopped in this browser. Nothing is being scored.
+            </p>
+          </section>
         )}
 
-        {view === 'session_done' && (
-          <section className="panel" aria-labelledby="done-title">
-            <h2 id="done-title">Session complete (research prototype)</h2>
-            <p className="status-ok">
-              Calibration and stimulus steps finished. Webcam streams were
-              stopped in this browser.
+        {shown === 'feature_error' && (
+          <section className="panel" aria-labelledby="feat-err-title">
+            <h2 id="feat-err-title">Could not save tracking notes</h2>
+            <p className="status-error" role="alert">
+              {error ??
+                'The numeric summary was not stored. You can try again or continue to the session summary.'}
             </p>
             <p className="muted">
-              No webcam video or images were uploaded. Only anonymous numeric
-              summaries are stored. This is not a diagnosis.
+              This is not a diagnosis. No video was uploaded.
             </p>
-            {featureResult && (
-              <ul className="summary-list">
-                <li>Feature ingest: {featureResult.status}</li>
-                <li>Tracking quality: {featureResult.quality}</li>
-              </ul>
-            )}
             <div className="button-row">
-              <button type="button" className="btn" onClick={showWelcome}>
-                Back to welcome
+              <button
+                type="button"
+                className="btn primary"
+                disabled={busy || !pendingPayload}
+                onClick={() => {
+                  if (pendingPayload) void handleFeatures(pendingPayload)
+                }}
+              >
+                {busy ? 'Saving…' : 'Retry'}
+              </button>
+              {canRequestResults(session) && (
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => {
+                    setError(null)
+                    setView('results')
+                  }}
+                >
+                  Continue to session summary
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn"
+                disabled={busy}
+                onClick={() => setView('stimulus')}
+              >
+                Return to video task
+              </button>
+              <button type="button" className="btn" onClick={startOver}>
+                Start over
               </button>
             </div>
           </section>
+        )}
+
+        {shown === 'results' && session && canRequestResults(session) && (
+          <ResultsPage
+            sessionId={session.id}
+            loadError={error}
+            suppressEstimates={calibrationOutcome === 'limited'}
+            onBack={showWelcome}
+          />
         )}
       </main>
     </div>

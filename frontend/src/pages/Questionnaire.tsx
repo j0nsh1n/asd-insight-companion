@@ -12,6 +12,7 @@ import {
   postQuestionResponse,
   postQuestionnaireComplete,
 } from '../lib/api'
+import { friendlyError } from '../lib/friendlyError'
 
 type QuestionnaireProps = {
   sessionId: string
@@ -104,9 +105,7 @@ export function Questionnaire({
         setIndex(nextIndex >= 0 ? nextIndex : 0)
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to load questionnaire',
-          )
+          setError(friendlyError(err))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -160,7 +159,7 @@ export function Questionnaire({
       setReadyToFinish(false)
       setLiveMessage('Questionnaire complete.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not complete questionnaire')
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -210,7 +209,7 @@ export function Questionnaire({
         setIndex((i) => i + 1)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save answer')
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }

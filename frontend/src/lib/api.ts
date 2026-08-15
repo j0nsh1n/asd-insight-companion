@@ -57,6 +57,7 @@ export type SessionResponse = {
     optional_context: string | null
   } | null
   questionnaire: QuestionnaireSummary | null
+  features_recorded: boolean
 }
 
 export type ConsentPayload = {
@@ -168,10 +169,14 @@ async function parseError(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { detail?: unknown }
     if (typeof body.detail === 'string') return body.detail
-    if (Array.isArray(body.detail)) return JSON.stringify(body.detail)
+    if (Array.isArray(body.detail)) {
+      return 'Some of the submitted data was not valid. Nothing extra was stored.'
+    }
   } catch {
     // ignore non-JSON error bodies
   }
+  if (response.status === 404) return 'session_not_found'
+  if (response.status === 403) return 'consent_required'
   return `Request failed (${response.status})`
 }
 
@@ -187,7 +192,18 @@ async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-async function postJson<T>(path: string, payload: unknown): Promise<T> {
+function requestTimeout(ms: number): AbortSignal | undefined {
+  if (typeof AbortSignal === 'undefined' || !('timeout' in AbortSignal)) {
+    return undefined
+  }
+  return AbortSignal.timeout(ms)
+}
+
+async function postJson<T>(
+  path: string,
+  payload: unknown,
+  init?: RequestInit,
+): Promise<T> {
   const response = await apiFetch(path, {
     method: 'POST',
     headers: {
@@ -195,6 +211,7 @@ async function postJson<T>(path: string, payload: unknown): Promise<T> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
+    ...init,
   })
   if (!response.ok) {
     throw new Error(await parseError(response))
@@ -292,7 +309,9 @@ export async function postQuestionnaireComplete(
 export async function postFeatures(
   payload: FeaturePayload,
 ): Promise<FeatureIngestResult> {
-  return postJson<FeatureIngestResult>('/api/v1/assessment/features', payload)
+  return postJson<FeatureIngestResult>('/api/v1/assessment/features', payload, {
+    signal: requestTimeout(20_000),
+  })
 }
 
 export async function fetchResearchSummary(
@@ -300,7 +319,7 @@ export async function fetchResearchSummary(
 ): Promise<ResearchSessionSummary> {
   const response = await apiFetch(
     `/api/v1/results/${encodeURIComponent(sessionId)}`,
-    { headers: { Accept: 'application/json' } },
+    { headers: { Accept: 'application/json' }, signal: requestTimeout(20_000) },
   )
   if (!response.ok) {
     throw new Error(await parseError(response))

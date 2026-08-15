@@ -2,34 +2,32 @@
 
 ## Current State
 
-Branch `feat/phase-5-research-results`. Phase 5 adds a read-only
-research-session summary after the stimulus step. Data quality and
-descriptive task notes only. No autism score, risk, or probability.
+Branch `feat/phase-6-integration`. Phase 6 hardens the full anonymous
+flow: stage resolver, resume-to-results, feature-submit recovery, and
+aligned safety copy. Still no autism score, risk, or probability.
 
-Gates as of 2026-08-14 (Phase 5):
+Gates as of 2026-08-15 (Phase 6):
 
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (67 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (86 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (96 tests) |
 
 Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
 version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
-calibration is client-only so results always show not_available;
-CI may lag unpushed commits.
+calibration pass/fail is not stored on the server; no Playwright E2E
+suite (manual matrix in `docs/TESTING.md`).
 
 ## Repo Landmarks
 
-    backend/app/api/v1/results.py      GET /results/{session_id}
-    backend/app/models/result.py       ResearchSessionSummary (extra=forbid)
-    backend/app/services/results_service.py
-    backend/app/services/data_quality_service.py
-    backend/app/services/safety_service.py
+    frontend/src/lib/assessmentFlow.ts client view resolver
+    frontend/src/lib/friendlyError.ts  participant-facing error copy
     frontend/src/pages/ResultsPage.tsx
-    frontend/src/lib/api.ts            fetchResearchSummary
-    frontend/src/types/assessment.ts
-    backend/app/api/v1/assessment.py   questionnaire + POST /features
-    shared/feature_quality_thresholds.json
+    frontend/src/lib/api.ts            fetchResearchSummary, features_recorded
+    backend/app/api/v1/results.py      GET /results/{session_id}
+    backend/app/models/session.py      SessionResponse.features_recorded
+    docs/TESTING.md
+    README.md
 
 ## Domain Model
 
@@ -37,6 +35,7 @@ CI may lag unpushed commits.
     Server stage still ends at questionnaire_complete.
     Client after that: camera → calibration → stimulus → POST /features
          → GET /results/{session_id}.
+    features_recorded is a boolean on SessionResponse (no media).
     Results are computed from stored questionnaire + feature_payload only.
     GET does not write. No scoring endpoint.
 
@@ -54,9 +53,10 @@ CI may lag unpushed commits.
 - FeaturePayload still forbids extra fields; `media_uploaded` is false.
 - The questionnaire total is stored server-side (`questionnaire_score`)
   and never displayed to participants or returned in the results payload.
+- Client views are not URL-routed. `resolveView` clamps a requested view
+  to the earliest allowed server stage.
 
 ## Session Handoff
 
-2026-08-14 · `feat/phase-5-research-results` · Mobile layout for the
-research session (safe area, 44px taps, stacked actions). Phase 6 not
-started.
+2026-08-15 · `feat/phase-6-integration` · Phase 6 flow, recovery, safety
+copy, and testing matrix. Next: examiner gate. Phase 7 not started.

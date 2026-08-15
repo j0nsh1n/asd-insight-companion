@@ -2,11 +2,17 @@ import type { ResearchTaskObservations } from '../types/assessment'
 
 type ResearchTaskSummaryProps = {
   observations: ResearchTaskObservations
+  suppressEstimates?: boolean
 }
 
-export function ResearchTaskSummary({ observations }: ResearchTaskSummaryProps) {
+export function ResearchTaskSummary({
+  observations,
+  suppressEstimates = false,
+}: ResearchTaskSummaryProps) {
   const q = observations.questionnaire_response_pattern
   const v = observations.video_task_summary
+  const showEstimates =
+    Boolean(v?.attention_estimates_available) && !suppressEstimates
   return (
     <section className="result-card" aria-labelledby="obs-title">
       <h3 id="obs-title">Research-task measurements</h3>
@@ -70,7 +76,13 @@ export function ResearchTaskSummary({ observations }: ResearchTaskSummaryProps) 
             </dt>
             <dd>{v.valid_tracking_duration_ms} ms</dd>
           </div>
-          {v.attention_estimates_available && v.mean_blink_estimate != null && (
+          {suppressEstimates && (
+            <p className="muted">
+              Calibration was limited or skipped, so blink and head-motion
+              estimates are not shown as valid.
+            </p>
+          )}
+          {showEstimates && v.mean_blink_estimate != null && (
             <div>
               <dt>
                 Mean blink estimate
@@ -82,7 +94,7 @@ export function ResearchTaskSummary({ observations }: ResearchTaskSummaryProps) 
               <dd>{v.mean_blink_estimate.toFixed(2)}</dd>
             </div>
           )}
-          {v.attention_estimates_available && v.head_motion_summary && (
+          {showEstimates && v.head_motion_summary && (
             <div>
               <dt>
                 Head-motion averages

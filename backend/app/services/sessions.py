@@ -107,6 +107,9 @@ def _row_to_response(row: sqlite3.Row) -> SessionResponse:
         consent=consent,
         intake=intake,
         questionnaire=questionnaire_summary_from_mapping(mapping),
+        features_recorded=bool(
+            mapping.get("feature_recorded_at") or mapping.get("feature_payload")
+        ),
     )
 
 

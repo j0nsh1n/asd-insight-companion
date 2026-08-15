@@ -12,7 +12,7 @@ describe('SafetyNotice', () => {
     })
     expect(notice).toBeInTheDocument()
     expect(notice).toHaveTextContent(
-      /research prototype only — this session summary is not a diagnosis/i,
+      /research prototype only\. this tool does not diagnose autism/i,
     )
     expect(notice).toHaveTextContent(
       /cannot determine whether someone is autistic/i,

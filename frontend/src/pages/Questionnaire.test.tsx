@@ -67,6 +67,7 @@ const baseSession = (stage: api.SessionStage): api.SessionResponse => ({
     optional_context: null,
   },
   questionnaire: null,
+  features_recorded: false,
 })
 
 describe('Questionnaire', () => {

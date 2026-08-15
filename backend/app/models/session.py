@@ -136,6 +136,7 @@ class SessionResponse(BaseModel):
     consent: ConsentState
     intake: IntakeState | None = None
     questionnaire: QuestionnaireSummary | None = None
+    features_recorded: bool = False
 
 
 class ErrorDetail(BaseModel):

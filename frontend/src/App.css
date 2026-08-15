@@ -234,7 +234,12 @@
   cursor: not-allowed;
 }
 
-.btn:focus-visible {
+.btn:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.scale-btn:focus-visible {
   outline: 2px solid #7ec8ff;
   outline-offset: 2px;
 }

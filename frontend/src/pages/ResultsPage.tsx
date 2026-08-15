@@ -1,73 +1,68 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { DataQualityCard } from '../components/DataQualityCard'
 import { ResearchTaskSummary } from '../components/ResearchTaskSummary'
 import { SafetyNotice } from '../components/SafetyNotice'
 import { fetchResearchSummary } from '../lib/api'
+import { friendlyError } from '../lib/friendlyError'
 import type { ResearchSessionSummary } from '../types/assessment'
 
 type ResultsPageProps = {
   sessionId: string
   loadError: string | null
+  suppressEstimates?: boolean
   onBack: () => void
-}
-
-function friendlyLoadError(message: string): string {
-  if (message === 'session_not_found') {
-    return 'This research session was not found.'
-  }
-  if (message === 'consent_required') {
-    return 'Consent is required before a session summary can be shown.'
-  }
-  return message
 }
 
 export function ResultsPage({
   sessionId,
   loadError,
+  suppressEstimates = false,
   onBack,
 }: ResultsPageProps) {
   const [summary, setSummary] = useState<ResearchSessionSummary | null>(null)
   const [error, setError] = useState<string | null>(loadError)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
+  const loadSummary = useCallback(async () => {
     setLoading(true)
-    fetchResearchSummary(sessionId)
-      .then((data) => {
-        if (!cancelled) {
-          setSummary(data)
-          setError(null)
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setSummary(null)
-          setError(
-            err instanceof Error
-              ? friendlyLoadError(err.message)
-              : 'Could not load the research-session summary',
-          )
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
+    setSummary(null)
+    try {
+      const data = await fetchResearchSummary(sessionId)
+      setSummary(data)
+      setError(null)
+    } catch (err: unknown) {
+      setSummary(null)
+      setError(friendlyError(err))
+    } finally {
+      setLoading(false)
     }
   }, [sessionId])
+
+  useEffect(() => {
+    void loadSummary()
+  }, [loadSummary])
 
   return (
     <section className="panel results-panel" aria-labelledby="results-title">
       <h2 id="results-title">Research-session summary</h2>
       <SafetyNotice />
 
-      {loading && <p>Loading stored research-task notes…</p>}
+      {loading && (
+        <p role="status" aria-live="polite" aria-busy="true">
+          Loading stored research-task notes…
+        </p>
+      )}
       {error && (
         <p className="status-error" role="alert">
           {error}
         </p>
+      )}
+      {error && !loading && (
+        <div className="button-row">
+          <button type="button" className="btn primary" onClick={() => void loadSummary()}>
+            Retry
+          </button>
+        </div>
       )}
 
       {summary && (
@@ -100,6 +95,7 @@ export function ResultsPage({
           </section>
           <ResearchTaskSummary
             observations={summary.research_task_observations}
+            suppressEstimates={suppressEstimates}
           />
           <section className="result-card" aria-labelledby="limits-title">
             <h3 id="limits-title">Limitations</h3>
