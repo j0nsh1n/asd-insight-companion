@@ -55,7 +55,11 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
         statements are accepted. The camera item is optional and can be
         declined. This tool never diagnoses autism.
       </p>
-      <form onSubmit={handleSubmit} className="form-stack">
+      <form
+        onSubmit={handleSubmit}
+        className="form-stack"
+        aria-describedby={localError || error ? 'consent-error' : undefined}
+      >
         <label className="check-row check-row-all">
           <input
             type="checkbox"
@@ -71,6 +75,7 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
           <input
             type="checkbox"
             checked={researchOnly}
+            aria-required="true"
             onChange={(e) => setResearchOnly(e.target.checked)}
           />
           <span>
@@ -82,6 +87,7 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
           <input
             type="checkbox"
             checked={noDiagnosis}
+            aria-required="true"
             onChange={(e) => setNoDiagnosis(e.target.checked)}
           />
           <span>
@@ -93,6 +99,7 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
           <input
             type="checkbox"
             checked={dataMinimization}
+            aria-required="true"
             onChange={(e) => setDataMinimization(e.target.checked)}
           />
           <span>
@@ -126,7 +133,7 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
           </span>
         </label>
         {(localError || error) && (
-          <p className="status-error" role="alert">
+          <p id="consent-error" className="status-error" role="alert">
             {localError ?? error}
           </p>
         )}

@@ -3,11 +3,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -30,6 +30,9 @@ def create_app() -> FastAPI:
             "Does not diagnose autism."
         ),
         lifespan=lifespan,
+        docs_url="/docs" if settings.expose_docs else None,
+        redoc_url="/redoc" if settings.expose_docs else None,
+        openapi_url="/openapi.json" if settings.expose_docs else None,
     )
     app.add_middleware(
         CORSMiddleware,
@@ -39,6 +42,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(api_router, prefix="/api/v1")
+
+    @app.middleware("http")
+    async def security_headers(_request: Request, call_next: Any) -> Response:
+        response = await call_next(_request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store"
+        return response  # type: ignore[no-any-return]
 
     def _json_safe(value: Any) -> Any:
         if isinstance(value, float) and not math.isfinite(value):
@@ -58,6 +70,15 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={"detail": jsonable_encoder(_json_safe(exc.errors()))},
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_error(_request: Request, exc: Exception) -> JSONResponse:
+        if isinstance(exc, HTTPException):
+            raise exc
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "internal_error"},
         )
 
     @app.get("/")

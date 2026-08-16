@@ -49,3 +49,24 @@ Start with `./scripts/dev.sh`.
 | Keyboard only | Tab through a full skip path | Visible focus; no trap; Enter/Space on buttons |
 | Narrow viewport | 360px wide | Primary actions stay visible; no horizontal overflow |
 | Network tab | Skip or complete the video task | No image/video/audio/frame payloads; `media_uploaded: false` |
+
+## Accessibility audit (manual)
+
+No Playwright/axe suite is in this repo. Keyboard-check these pages on
+desktop, then 360px wide:
+
+| Page | Check |
+|---|---|
+| Welcome | Skip-to-main link, one H1, backend status |
+| Consent | Three required boxes announced; incomplete submit stays on the form |
+| Intake | Age/language labeled required; errors in an alert |
+| Questionnaire | Placeholder banner; progress announced; Next disabled until an answer |
+| Camera / calibration | Skip and Continue without camera are tabbable; quality is text, not color only |
+| Stimulus | Native video controls; skip/back; missing-clip alert |
+| Results | Safety notice; quality labels have text; Retry on load failure |
+
+## Browser / device notes
+
+Camera requires a secure context: `http://127.0.0.1` / `localhost` in
+development, HTTPS when deployed. The questionnaire-only path does not
+need a camera or GPU.

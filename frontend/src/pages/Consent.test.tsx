@@ -30,6 +30,15 @@ describe('Consent', () => {
     const boxes = screen.getAllByRole('checkbox')
     // agree-to-all + three required + optional camera
     expect(boxes).toHaveLength(5)
+    expect(
+      screen.getByRole('checkbox', { name: /research-only prototype/i }),
+    ).toHaveAttribute('aria-required', 'true')
+    expect(
+      screen.getByRole('checkbox', { name: /does not diagnose autism/i }),
+    ).toHaveAttribute('aria-required', 'true')
+    expect(
+      screen.getByRole('checkbox', { name: /minimized, anonymous research data/i }),
+    ).toHaveAttribute('aria-required', 'true')
     await user.click(
       screen.getByRole('checkbox', { name: /research-only prototype/i }),
     )

@@ -50,9 +50,26 @@ skip-able notice (“The video clip isn't available in this build”) instead of
 playing. Rights, captions, and replacement guidance:
 [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
 
+## Environment
+
+Copy [`.env.example`](.env.example) to `.env`. Placeholders only.
+
+| Variable | Purpose |
+|---|---|
+| `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
+| `ENVIRONMENT` | `development` (OpenAPI `/docs` on) or `production` (docs off) |
+| `SQLITE_PATH` | Optional SQLite file path |
+| `VITE_API_BASE_URL` | Frontend API base (build-time for production builds) |
+
+Camera access needs a secure context: localhost in development, HTTPS when
+deployed. Docker Compose (`docker compose up --build`) is an optional local
+skeleton; `./scripts/dev.sh` is the usual path.
+
 ## Commands
 
 | Area | Command |
 |---|---|
 | Backend lint / types / tests | `cd backend && ruff check . && ruff format --check . && mypy app && pytest -q` |
 | Frontend lint / tests / build | `cd frontend && npm run lint && npm test && npm run build` |
+
+See [docs/DEMO_CHECKLIST.md](docs/DEMO_CHECKLIST.md) for a judging walkthrough.

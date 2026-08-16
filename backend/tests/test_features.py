@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.services.question_bank import get_question_bank
@@ -81,6 +82,20 @@ def test_features_rejects_extra_frame_field(client: TestClient) -> None:
 def test_features_rejects_raw_media_field(client: TestClient) -> None:
     sid = _complete_questionnaire(client)
     payload = _valid_payload(sid, image_base64="AAAA")
+    response = client.post("/api/v1/assessment/features", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "extra_key",
+    ("video", "video_file", "image", "audio", "recording", "blob", "raw_landmarks"),
+)
+def test_features_rejects_media_like_extra_keys(
+    client: TestClient, extra_key: str
+) -> None:
+    sid = _complete_questionnaire(client)
+    payload = _valid_payload(sid)
+    payload[extra_key] = "x"
     response = client.post("/api/v1/assessment/features", json=payload)
     assert response.status_code == 422
 

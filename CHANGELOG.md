@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Release hardening (Phase 7): skip-to-main link, required-field labels,
+  safe 500 bodies, security headers, production-hidden API docs, a CI
+  source check that raw-media APIs stay out of the app, and a demo
+  checklist.
+
 ### Fixed
 
 - Unknown API error details are no longer shown on recovery screens.
 - README now states that raw media is never uploaded or retained, and
   documents that the gitignored attention clip must be added before a demo.
-
-### Added
 
 - End-to-end session flow hardening (Phase 6): resume after saved tracking
   notes opens the research-session summary, failed feature saves show retry

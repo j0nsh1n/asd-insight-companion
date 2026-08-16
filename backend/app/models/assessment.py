@@ -58,6 +58,8 @@ class QuestionBankPublic(BaseModel):
 class QuestionResponseRequest(BaseModel):
     """Client-reported answer and per-question timing metrics."""
 
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str = Field(min_length=1)
     question_id: str = Field(min_length=1)
     answer_value: int

@@ -86,13 +86,18 @@ export function Intake({
         Minimized research fields only. No names, contact details, or diagnostic
         claims.
       </p>
-      <form onSubmit={handleSubmit} className="form-stack">
+      <form
+        onSubmit={handleSubmit}
+        className="form-stack"
+        aria-describedby={localError || error ? 'intake-error' : undefined}
+      >
         <label className="field">
-          <span>Age range</span>
+          <span>Age range (required)</span>
           <select
             value={ageRange}
             onChange={(e) => setAgeRange(e.target.value)}
             required
+            aria-required="true"
           >
             {AGE_RANGES.map((r) => (
               <option key={r} value={r}>
@@ -105,13 +110,14 @@ export function Intake({
           </span>
         </label>
         <label className="field">
-          <span>Language</span>
+          <span>Language (required)</span>
           <input
             type="text"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             maxLength={32}
             required
+            aria-required="true"
           />
         </label>
         <fieldset className="fieldset">
@@ -163,7 +169,7 @@ export function Intake({
           </span>
         </label>
         {(localError || error) && (
-          <p className="status-error" role="alert">
+          <p id="intake-error" className="status-error" role="alert">
             {localError ?? error}
           </p>
         )}

@@ -153,6 +153,9 @@ describe('App Phase 1 flow', () => {
   it('shows research disclaimer and welcome shell', async () => {
     render(<App />)
     expect(
+      screen.getByRole('link', { name: /skip to main content/i }),
+    ).toHaveAttribute('href', '#main-content')
+    expect(
       screen.getByRole('note', { name: /research disclaimer/i }),
     ).toBeInTheDocument()
     expect(
