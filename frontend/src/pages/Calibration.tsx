@@ -21,7 +21,7 @@ type CalibrationProps = {
   /** False when optional camera consent was declined. */
   cameraAllowed?: boolean
   onBack: () => void
-  onComplete: () => void
+  onComplete: (outcome: 'passed' | 'limited') => void
 }
 
 type StepId = 'intro' | 'center' | 'hold' | 'done_local'
@@ -198,12 +198,12 @@ export function Calibration({
 
   const finish = () => {
     releaseCamera()
-    onComplete()
+    onComplete('passed')
   }
 
   const skipWithoutCamera = () => {
     releaseCamera()
-    onComplete()
+    onComplete('limited')
   }
 
   const backToIntro = () => {

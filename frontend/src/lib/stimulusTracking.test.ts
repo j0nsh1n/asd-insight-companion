@@ -6,6 +6,8 @@ import {
   emptyTrackingSummary,
   FEATURE_QUALITY_THRESHOLDS,
   frameFromDetection,
+  MAX_TRACKING_SAMPLES,
+  pushTrackingSample,
   summarizeTrackingFrames,
   type TrackingFrame,
 } from './stimulusTracking'
@@ -161,5 +163,30 @@ describe('stimulusTracking', () => {
     expect(buildFeaturePayload('sid', 'social-interaction-v1', summary).data_quality).toBe(
       'ok',
     )
+  })
+
+  it('caps the in-memory buffer and counts overflow as dropped ticks', () => {
+    const frames: TrackingFrame[] = []
+    let overflow = 0
+    const extra = 10
+    const sample: TrackingFrame = {
+      timestamp: 0,
+      tracking_ok: true,
+      one_face: true,
+      head_pose: { yawDeg: 1, pitchDeg: 1, rollDeg: 0 },
+      blink_estimate: 0.1,
+    }
+    for (let i = 0; i < MAX_TRACKING_SAMPLES + extra; i += 1) {
+      if (!pushTrackingSample(frames, { ...sample, timestamp: i })) {
+        overflow += 1
+      }
+    }
+    expect(frames.length).toBe(MAX_TRACKING_SAMPLES)
+    expect(overflow).toBe(extra)
+    const summary = summarizeTrackingFrames(frames, 1_000, {
+      tickAttempts: MAX_TRACKING_SAMPLES + extra,
+      tickFailures: overflow,
+    })
+    expect(summary.dropped_frame_ratio).toBeGreaterThan(0)
   })
 })

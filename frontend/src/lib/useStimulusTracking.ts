@@ -17,6 +17,7 @@ import {
 import {
   emptyTrackingSummary,
   frameFromDetection,
+  pushTrackingSample,
   summarizeTrackingFrames,
   type TrackingFrame,
   type TrackingSessionSummary,
@@ -164,7 +165,13 @@ export function useStimulusTracking(
           lastTsRef.current = ts
           const result = detectFacesForVideo(lm, cam, ts)
           const clipTs = clipVideoRef.current?.currentTime ?? 0
-          framesRef.current.push(frameFromDetection(clipTs * 1000, result))
+          const stored = pushTrackingSample(
+            framesRef.current,
+            frameFromDetection(clipTs * 1000, result),
+          )
+          if (!stored) {
+            tickFailuresRef.current += 1
+          }
         } catch {
           tickFailuresRef.current += 1
         }

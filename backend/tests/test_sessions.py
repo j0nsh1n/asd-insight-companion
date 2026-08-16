@@ -39,6 +39,7 @@ def test_create_session_anonymous(client: TestClient) -> None:
     assert body["consent"]["camera_optional"] is None
     assert body["consent"]["consented_at"] is None
     assert body["intake"] is None
+    assert body["features_recorded"] is False
 
 
 def test_no_consent_blocks_intake(client: TestClient) -> None:

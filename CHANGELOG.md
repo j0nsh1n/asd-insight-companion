@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Unknown API error details are no longer shown on recovery screens.
+- README now states that raw media is never uploaded or retained, and
+  documents that the gitignored attention clip must be added before a demo.
+
 ### Added
 
+- End-to-end session flow hardening (Phase 6): resume after saved tracking
+  notes opens the research-session summary, failed feature saves show retry
+  instead of a false success, and a root README plus testing matrix document
+  the prototype scope and limitations.
 - Research-session summary after the attention clip (Phase 5): a Results
   page and `GET /api/v1/results/{session_id}` combine the stored
   questionnaire and numeric tracking notes, report session completeness,

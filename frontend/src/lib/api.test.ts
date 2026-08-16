@@ -75,6 +75,7 @@ describe('session API helpers', () => {
       consented_at: null,
     },
     intake: null,
+    features_recorded: false,
   }
 
   it('createSession POSTs /sessions', async () => {

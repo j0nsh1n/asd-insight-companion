@@ -66,6 +66,9 @@ def test_features_accepted_numeric_only(client: TestClient) -> None:
     assert "score" not in body
     assert "risk" not in body
     assert "autism" not in str(body).lower()
+    session = client.get(f"/api/v1/sessions/{sid}")
+    assert session.status_code == 200
+    assert session.json()["features_recorded"] is True
 
 
 def test_features_rejects_extra_frame_field(client: TestClient) -> None:

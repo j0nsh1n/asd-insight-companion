@@ -70,7 +70,7 @@ describe('Calibration', () => {
     await user.click(
       screen.getByRole('button', { name: /skip calibration camera/i }),
     )
-    expect(onComplete).toHaveBeenCalled()
+    expect(onComplete).toHaveBeenCalledWith('limited')
     expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
   })
 

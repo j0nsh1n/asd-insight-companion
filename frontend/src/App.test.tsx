@@ -80,6 +80,7 @@ const baseSession = (
           optional_context: null,
         },
   questionnaire: null,
+  features_recorded: false,
   ...extras,
 })
 
@@ -271,7 +272,9 @@ describe('App Phase 1 flow', () => {
       screen.getByRole('button', { name: /start anonymous session/i }),
     )
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/network down/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /something went wrong\. you can try again/i,
+      )
     })
     expect(sessionStore.loadSessionId()).toBe(prior)
   })
@@ -336,7 +339,7 @@ describe('App Phase 1 flow', () => {
     })
     expect(
       screen.getByRole('note', { name: /research session notice/i }),
-    ).toHaveTextContent(/not a diagnosis/i)
+    ).toHaveTextContent(/does not diagnose autism/i)
     expect(screen.getByLabelText(/video task: skipped/i)).toBeInTheDocument()
     expect(mocked.postFeatures).toHaveBeenCalled()
     expect(mocked.fetchResearchSummary).toHaveBeenCalled()
@@ -347,5 +350,74 @@ describe('App Phase 1 flow', () => {
     expect(sent.media_uploaded).toBe(false)
     expect(sent.frames).toBeUndefined()
     expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
+  })
+
+  it('shows retry recovery when feature submit fails', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(
+      baseSession('questionnaire_complete', {
+        consent: {
+          research_only: true,
+          no_diagnosis: true,
+          data_minimization: true,
+          camera_optional: false,
+          consented_at: '2026-01-01T00:01:00+00:00',
+        },
+      }),
+    )
+    mocked.postFeatures.mockRejectedValue(new Error('Failed to fetch'))
+
+    render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /continue without camera/i }),
+      ).toBeInTheDocument()
+    })
+    await user.click(
+      screen.getByRole('button', { name: /continue without camera/i }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: /skip calibration camera/i }),
+    )
+    await user.click(screen.getByRole('button', { name: /skip video task/i }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /could not save tracking notes/i }),
+      ).toBeInTheDocument()
+    })
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /research service is unavailable/i,
+    )
+    expect(screen.getByRole('button', { name: /^retry$/i })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: /research-session summary/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('resumes a recorded session to results, not the camera step', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(
+      baseSession('questionnaire_complete', { features_recorded: true }),
+    )
+
+    render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /research-session summary/i }),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole('heading', { name: /camera quality check/i }),
+    ).not.toBeInTheDocument()
+    expect(mocked.fetchResearchSummary).toHaveBeenCalled()
   })
 })
