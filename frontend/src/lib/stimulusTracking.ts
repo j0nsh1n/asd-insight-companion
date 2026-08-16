@@ -76,6 +76,21 @@ export type FeaturePayload = {
 
 const TRACKING_OK_MIN_CONF = 0.5
 
+/** Generous in-memory cap: ~5 minutes at 60 Hz requestAnimationFrame. */
+export const MAX_TRACKING_SAMPLES = 18_000
+
+/** Append one sample, or return false when the buffer is already at the cap. */
+export function pushTrackingSample(
+  frames: TrackingFrame[],
+  frame: TrackingFrame,
+): boolean {
+  if (frames.length >= MAX_TRACKING_SAMPLES) {
+    return false
+  }
+  frames.push(frame)
+  return true
+}
+
 export function emptyTrackingSummary(
   durationMs = 0,
 ): TrackingSessionSummary {

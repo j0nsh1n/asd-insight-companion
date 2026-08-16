@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Unknown API error details are no longer shown on recovery screens.
+- README now states that raw media is never uploaded or retained, and
+  documents that the gitignored attention clip must be added before a demo.
+
 ### Added
 
 - End-to-end session flow hardening (Phase 6): resume after saved tracking

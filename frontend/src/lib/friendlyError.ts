@@ -42,11 +42,10 @@ export function friendlyError(err: unknown): string {
     return 'Some of the submitted data was not valid. Nothing extra was stored.'
   }
 
-  if (raw.length > 180) {
-    return 'Something went wrong. You can try again or continue without this step.'
+  if (raw) {
+    console.debug('Unmapped error detail withheld from UI', raw)
   }
-
-  return raw || 'Something went wrong. You can try again.'
+  return 'Something went wrong. You can try again.'
 }
 
 function messageOf(err: unknown): string {

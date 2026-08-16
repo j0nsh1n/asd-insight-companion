@@ -26,7 +26,7 @@ research-session summary.
 - One short stimulus task cannot assess autism.
 - Webcam estimates depend on lighting, device, pose, and tracking quality.
 - No clinical diagnosis or probability is produced.
-- Raw media is not uploaded or retained by default.
+- Raw media is never uploaded or retained.
 - Calibration is client-only; the server does not store a pass/fail.
 
 ## Run locally
@@ -40,6 +40,15 @@ Frontend: `http://127.0.0.1:5173`
 
 See [docs/TESTING.md](docs/TESTING.md) for test commands and a manual
 end-to-end matrix.
+
+### Before a demo or a real session
+
+Place an approved attention clip at
+`frontend/public/stimuli/social-interaction-v1.mp4`. The file is gitignored
+on purpose and is not in the repo. Without it, the video step shows a
+skip-able notice (“The video clip isn't available in this build”) instead of
+playing. Rights, captions, and replacement guidance:
+[docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
 
 ## Commands
 

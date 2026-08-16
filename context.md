@@ -11,7 +11,7 @@ Gates as of 2026-08-15 (Phase 6):
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (67 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (96 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (98 tests) |
 
 Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
 version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
@@ -58,5 +58,6 @@ suite (manual matrix in `docs/TESTING.md`).
 
 ## Session Handoff
 
-2026-08-15 · `feat/phase-6-integration` · Phase 6 flow, recovery, safety
-copy, and testing matrix. Next: examiner gate. Phase 7 not started.
+2026-08-15 · `feat/phase-6-integration` · Phase 6 fix pass: clip demo note,
+allowlisted errors, tracking sample cap, README wording, filled roadmap.
+Next: examiner gate. Phase 7 not started.

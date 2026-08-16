@@ -1,26 +1,66 @@
-# roadmap.md — {{PROJECT_NAME}}
+# roadmap.md — ASD Insight Companion
 
 Note: "Complete when" conditions are verified locally (tests pass, feature
 works) and via PR review. One phase may span several small PRs.
 
-## Phase 1 — {{Name, e.g., "Governance & hygiene"}}
+## Phase 0 — Scaffold and health
 - Tasks:
-  - {{task}}
-  - {{task}}
-- Complete when: {{verifiable condition}}
-- Status: [ ]
+  - FastAPI health endpoint and React/Vite shell
+  - Persistent research-only disclaimer
+  - Local run scripts and CI lint/test jobs
+- Complete when: `GET /api/v1/health` and the frontend shell run locally
+- Status: [x]
 
-## Phase 2 — {{Name}}
+## Phase 1 — Consent and anonymous sessions
 - Tasks:
-  - {{task}}
-- Complete when: {{verifiable condition}}
-- Status: [ ]
+  - Fail-closed consent and intake
+  - Anonymous session create / get / resume
+  - SQLite session persistence
+- Complete when: intake is unreachable without the three required statements
+- Status: [x]
 
-## Phase 3 — {{Name}}
+## Phase 2 — Timed placeholder questionnaire
 - Tasks:
-  - {{task}}
-- Complete when: {{verifiable condition}}
-- Status: [ ]
+  - One-item-at-a-time placeholder bank
+  - Per-question timing and answer-change counts
+  - Resume to the next unanswered item
+- Complete when: questionnaire completes only after required items are saved
+- Status: [x]
+
+## Phase 3 — Camera preview, quality gate, and calibration
+- Tasks:
+  - Local video-only camera preview
+  - On-device Face Landmarker quality gate
+  - Guided local calibration; optional camera consent
+- Complete when: declined camera never calls getUserMedia and the session can continue
+- Status: [x]
+
+## Phase 4 — Stimulus, local tracking, and numeric features
+- Tasks:
+  - One accessible attention clip from the shared manifest
+  - In-memory tracking while the clip plays
+  - JSON-only `POST /api/v1/assessment/features` (no raw media)
+- Complete when: extra media fields 422 and ingest returns quality, not a score
+- Status: [x]
+
+## Phase 5 — Research-session summary
+- Tasks:
+  - Read-only `GET /api/v1/results/{session_id}`
+  - Data-quality and descriptive task notes only
+  - Results page with safety notice, limitations, and next steps
+- Complete when: skipped or low-quality video is partial/limited and no risk field exists
+- Status: [x]
+
+## Phase 6 — End-to-end integration and recovery
+- Tasks:
+  - Client stage resolver and resume-to-results
+  - Feature-submit retry without a false success
+  - Aligned safety copy, README scope, and testing matrix
+- Complete when: consent/questionnaire cannot be skipped and failed saves show recovery
+- Status: [x]
 
 ## Backlog (unscheduled)
-- {{nice-to-haves, known debt, future ideas}}
+- Licensed AQ-10 (Adult) if written permission is obtained
+- Session withdraw, TTL, and encrypted-at-rest storage
+- Replace the gitignored placeholder attention clip with an approved recording
+- Playwright coverage for the documented manual matrix

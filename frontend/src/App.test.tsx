@@ -272,7 +272,9 @@ describe('App Phase 1 flow', () => {
       screen.getByRole('button', { name: /start anonymous session/i }),
     )
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/network down/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /something went wrong\. you can try again/i,
+      )
     })
     expect(sessionStore.loadSessionId()).toBe(prior)
   })
