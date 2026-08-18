@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SessionStage(StrEnum):
@@ -31,6 +31,8 @@ AgeRange = Literal[
 class AccessibilityPrefs(BaseModel):
     """Minimized accessibility preferences collected at intake."""
 
+    model_config = ConfigDict(extra="forbid")
+
     large_text: bool = False
     reduced_motion: bool = False
     screen_reader_hints: bool = False
@@ -38,6 +40,8 @@ class AccessibilityPrefs(BaseModel):
 
 class ConsentRequest(BaseModel):
     """Required flags must all be true; camera_optional is independently declinable."""
+
+    model_config = ConfigDict(extra="forbid")
 
     research_only: bool
     no_diagnosis: bool
@@ -56,6 +60,8 @@ class ConsentRequest(BaseModel):
 
 class IntakeRequest(BaseModel):
     """Minimized intake payload (18+ age buckets only)."""
+
+    model_config = ConfigDict(extra="forbid")
 
     age_range: AgeRange
     # Constraints re-checked after normalize_language (strip/lower).

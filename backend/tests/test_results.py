@@ -53,8 +53,13 @@ def test_results_complete_questionnaire_and_usable_video(client: TestClient) -> 
     )
     assert body["safety"]["not_a_diagnosis"] is True
     assert body["safety"]["no_clinical_probability_provided"] is True
-    assert "score" not in json.dumps(body).lower()
-    assert "risk" not in json.dumps(body).lower()
+    dumped = json.dumps(body).lower()
+    assert "score" not in dumped
+    assert "risk" not in dumped
+    assert "frames" not in dumped
+    assert "base64" not in dumped
+    assert "landmark" not in dumped
+    assert "autism_probability" not in dumped
     blob = _explanation_blob(body)
     for term in PROHIBITED:
         assert term not in blob, term

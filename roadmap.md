@@ -59,6 +59,14 @@ works) and via PR review. One phase may span several small PRs.
 - Complete when: consent/questionnaire cannot be skipped and failed saves show recovery
 - Status: [x]
 
+## Phase 7 — Hardening and release readiness
+- Tasks:
+  - Accessibility labels, skip link, and documented keyboard audit
+  - Safe errors, security headers, and production-hidden docs
+  - CI privacy grep and demo/testing docs
+- Complete when: gates pass and the questionnaire-only demo path is documented
+- Status: [x]
+
 ## Backlog (unscheduled)
 - Licensed AQ-10 (Adult) if written permission is obtained
 - Session withdraw, TTL, and encrypted-at-rest storage

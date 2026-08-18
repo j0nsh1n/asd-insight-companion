@@ -52,3 +52,23 @@ def test_root_returns_service_info() -> None:
     body = response.json()
     assert body["service"] == "asd-insight-companion"
     assert body["health"] == "/api/v1/health"
+
+
+def test_health_sets_security_headers() -> None:
+    response = client.get("/api/v1/health")
+    assert response.headers.get("x-content-type-options") == "nosniff"
+    assert response.headers.get("x-frame-options") == "DENY"
+    assert response.headers.get("referrer-policy") == "no-referrer"
+    assert response.headers.get("cache-control") == "no-store"
+
+
+def test_docs_hidden_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    from app.core.config import get_settings
+    from app.main import create_app
+
+    get_settings.cache_clear()
+    with TestClient(create_app()) as prod_client:
+        assert prod_client.get("/docs").status_code == 404
+        assert prod_client.get("/openapi.json").status_code == 404
+    get_settings.cache_clear()

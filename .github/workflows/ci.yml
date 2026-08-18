@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
 
 jobs:
   backend:
@@ -59,6 +59,31 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject raw-media upload APIs in app source
+        run: |
+          set +e
+          hits=$(grep -R --include='*.py' --include='*.ts' --include='*.tsx' \
+            --exclude='*.test.ts' --exclude='*.test.tsx' \
+            -E 'MediaRecorder\(|toBlob\(|toDataURL\(|UploadFile|RTCPeerConnection' \
+            backend/app frontend/src)
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "$hits"
+            echo "Raw-media upload API found in application source"
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo "$hits"
+            echo "Privacy grep failed (status=$status). Expected 1 (no matches)."
+            exit 1
+          fi
+          echo "No raw-media upload APIs in backend/app or frontend/src"
 
   markdown:
     runs-on: ubuntu-latest

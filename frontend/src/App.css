@@ -37,6 +37,23 @@
   }
 }
 
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 30;
+  padding: 0.5rem 0.75rem;
+  background: #0f1419;
+  color: #e7ecf1;
+  border: 2px solid #7ec8ff;
+  border-radius: 6px;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

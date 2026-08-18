@@ -2,21 +2,21 @@
 
 ## Current State
 
-Branch `feat/phase-6-integration`. Phase 6 hardens the full anonymous
-flow: stage resolver, resume-to-results, feature-submit recovery, and
-aligned safety copy. Still no autism score, risk, or probability.
+Branch `feat/phase-7-hardening`. Phase 7 is release hardening: a11y
+labels, safe 500s, security headers, CI privacy grep, demo checklist.
+Still no autism score, risk, or probability.
 
-Gates as of 2026-08-15 (Phase 6):
+Gates as of 2026-08-15 (Phase 7):
 
 | Gate | Result |
 |---|---|
-| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (67 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (98 tests) |
+| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
 
 Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
 version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
-calibration pass/fail is not stored on the server; no Playwright E2E
-suite (manual matrix in `docs/TESTING.md`).
+calibration pass/fail is not stored on the server; no Playwright/axe
+suite (manual audit in `docs/TESTING.md`).
 
 ## Repo Landmarks
 
@@ -27,6 +27,7 @@ suite (manual matrix in `docs/TESTING.md`).
     backend/app/api/v1/results.py      GET /results/{session_id}
     backend/app/models/session.py      SessionResponse.features_recorded
     docs/TESTING.md
+    docs/DEMO_CHECKLIST.md
     README.md
 
 ## Domain Model
@@ -58,6 +59,6 @@ suite (manual matrix in `docs/TESTING.md`).
 
 ## Session Handoff
 
-2026-08-15 · `feat/phase-6-integration` · Phase 6 fix pass: clip demo note,
-allowlisted errors, tracking sample cap, README wording, filled roadmap.
-Next: examiner gate. Phase 7 not started.
+2026-08-16 · `feat/phase-7-hardening` · Phase 7 fix pass: privacy grep
+fail-closed, 500/HTTP error tests, per-control aria-invalid.
+Next: examiner gate. Phase 8 not started.

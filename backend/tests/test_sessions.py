@@ -70,6 +70,15 @@ def test_incomplete_consent_rejected(client: TestClient) -> None:
     assert got.json()["consent"]["research_only"] is False
 
 
+def test_consent_rejects_extra_fields(client: TestClient) -> None:
+    session = _create(client)
+    extra = {**FULL_CONSENT, "video_file": "x"}
+    response = client.post(f"/api/v1/sessions/{session['id']}/consent", json=extra)
+    assert response.status_code == 422
+    got = client.get(f"/api/v1/sessions/{session['id']}")
+    assert got.json()["stage"] == "created"
+
+
 def test_missing_consent_fields_rejected(client: TestClient) -> None:
     session = _create(client)
     response = client.post(

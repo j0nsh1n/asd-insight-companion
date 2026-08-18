@@ -208,9 +208,14 @@ function App() {
 
   return (
     <div className={shellClasses}>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
       <ResearchDisclaimer />
       <main
+        id="main-content"
         className="app-main"
+        tabIndex={-1}
         {...(prefs?.screen_reader_hints
           ? { 'aria-describedby': 'a11y-hints-note' }
           : {})}
