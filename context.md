@@ -2,21 +2,20 @@
 
 ## Current State
 
-Branch `feat/phase-7-hardening`. Phase 7 is release hardening: a11y
-labels, safe 500s, security headers, CI privacy grep, demo checklist.
-Still no autism score, risk, or probability.
+Branch `feat/phase-8-release`. Phase 8 is final validation, demo docs, and
+feature freeze. Phase 7 is on `main` (PR #16). Still no autism score,
+risk, or probability.
 
-Gates as of 2026-08-15 (Phase 7):
+Gates as of 2026-08-18 (Phase 8):
 
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
 | Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
 
-Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
-version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
-calibration pass/fail is not stored on the server; no Playwright/axe
-suite (manual audit in `docs/TESTING.md`).
+Known gaps: placeholder `.mp4` is gitignored; no withdraw/TTL/auth;
+SQLite unencrypted; calibration not stored on the server; no Playwright;
+manual matrix still required for live demo paths.
 
 ## Repo Landmarks
 
@@ -27,7 +26,10 @@ suite (manual audit in `docs/TESTING.md`).
     backend/app/api/v1/results.py      GET /results/{session_id}
     backend/app/models/session.py      SessionResponse.features_recorded
     docs/TESTING.md
+    docs/FINAL_VERIFICATION.md
+    docs/DEMO_SCRIPT.md
     docs/DEMO_CHECKLIST.md
+    docs/RELEASE_FREEZE.md
     README.md
 
 ## Domain Model
@@ -59,6 +61,5 @@ suite (manual audit in `docs/TESTING.md`).
 
 ## Session Handoff
 
-2026-08-16 · `feat/phase-7-hardening` · Phase 7 fix pass: privacy grep
-fail-closed, 500/HTTP error tests, per-control aria-invalid.
-Next: examiner gate. Phase 8 not started.
+2026-08-18 · `feat/phase-8-release` · Phase 8 verification docs and
+feature freeze. Next: examiner / human manual matrix. Phase 9 not started.

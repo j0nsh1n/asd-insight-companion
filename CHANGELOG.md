@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Final verification matrix, judge demo script, and release freeze
+  (Phase 8). No new product features.
 - Release hardening (Phase 7): skip-to-main link, required-field labels,
   safe 500 bodies, security headers, production-hidden API docs, a CI
   source check that raw-media APIs stay out of the app, and a demo

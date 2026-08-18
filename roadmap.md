@@ -67,6 +67,14 @@ works) and via PR review. One phase may span several small PRs.
 - Complete when: gates pass and the questionnaire-only demo path is documented
 - Status: [x]
 
+## Phase 8 — Final validation and feature freeze
+- Tasks:
+  - Final verification matrix and demo script
+  - README / submission links
+  - Release freeze (no new features after this phase)
+- Complete when: automated gates pass and demo/fallback docs exist
+- Status: [x]
+
 ## Backlog (unscheduled)
 - Licensed AQ-10 (Adult) if written permission is obtained
 - Session withdraw, TTL, and encrypted-at-rest storage
