@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- README first-time setup (venv, `npm install`, MediaPipe vendor). Demo
+  script says raw video is never uploaded. CI vs CodeQL triggers documented
+  accurately.
 - CI privacy grep now fails on missing scan paths, skips `*.test.ts(x)`,
   and is configured to run on `feat/**` pushes. Unhandled errors are
   covered by tests; consent/intake mark invalid required fields.

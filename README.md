@@ -38,6 +38,18 @@ research-session summary.
 - Calibration is client-only; the server does not store a pass/fail.
 - This prototype must not be used for medical decisions.
 
+## First-time setup
+
+```bash
+python3 -m venv backend/.venv && backend/.venv/bin/pip install -r backend/requirements.txt
+cd frontend && npm install
+```
+
+`npm install` vendors the MediaPipe WASM and face-landmarker model into
+`frontend/public/mediapipe/` (gitignored; LICENSE and NOTICE are tracked) and
+needs network access the first time; without it the camera quality step cannot
+load.
+
 ## Run locally
 
 ```bash

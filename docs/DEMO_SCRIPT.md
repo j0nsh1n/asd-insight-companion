@@ -20,8 +20,8 @@ medical decisions.”
 Open Consent. Check the three required statements. Leave the camera item
 unchecked or checked, and say what you will demo.
 
-Say: “The optional camera activity processes data locally. Raw video is not
-uploaded or retained by default.”
+Say: “The optional camera activity processes data locally. Raw video is
+never uploaded or retained.”
 
 (Implementation: webcam frames stay in the tab and are never posted.)
 

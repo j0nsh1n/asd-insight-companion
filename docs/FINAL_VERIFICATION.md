@@ -36,5 +36,7 @@ From `backend/`: `ruff check . && ruff format --check . && mypy app && pytest -q
 
 From `frontend/`: `npm run lint && npm test && npm run build`
 
-CI (`.github/workflows/ci.yml`): backend, frontend, privacy grep, CodeQL on
-`main` / PRs / `feat/**` pushes.
+`.github/workflows/ci.yml` runs backend, frontend, privacy grep, and
+markdown on pull requests and on pushes to `main` and `feat/**`.
+`.github/workflows/codeql.yml` runs on pushes to `main`, on pull
+requests, and weekly. It does not use a `feat/**` push trigger.

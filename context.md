@@ -61,5 +61,6 @@ manual matrix still required for live demo paths.
 
 ## Session Handoff
 
-2026-08-18 · `feat/phase-8-release` · Phase 8 verification docs and
-feature freeze. Next: examiner / human manual matrix. Phase 9 not started.
+2026-08-18 · `feat/phase-8-release` · Phase 8 fix pass: CI trigger
+wording, first-time setup, demo-script “never uploaded.” Phase 9 not
+started.
