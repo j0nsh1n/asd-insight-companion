@@ -10,8 +10,8 @@ Gates as of 2026-08-15 (Phase 7):
 
 | Gate | Result |
 |---|---|
-| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (77 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (98 tests) |
+| Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
 
 Known gaps: placeholder `.mp4` is gitignored; orphan answers if bank
 version changes mid-dev; no withdraw/TTL/auth; SQLite unencrypted;
@@ -59,6 +59,6 @@ suite (manual audit in `docs/TESTING.md`).
 
 ## Session Handoff
 
-2026-08-15 · `feat/phase-7-hardening` · Phase 7 hardening: skip link,
-safe 500s, security headers, privacy CI grep, demo checklist.
+2026-08-16 · `feat/phase-7-hardening` · Phase 7 fix pass: privacy grep
+fail-closed, 500/HTTP error tests, per-control aria-invalid.
 Next: examiner gate. Phase 8 not started.

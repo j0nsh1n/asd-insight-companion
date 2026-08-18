@@ -18,6 +18,24 @@ describe('Consent', () => {
     expect(
       screen.getByText(/consent is incomplete/i),
     ).toBeInTheDocument()
+    const research = screen.getByRole('checkbox', {
+      name: /research-only prototype/i,
+    })
+    expect(research).toHaveAttribute('aria-invalid', 'true')
+    expect(research).toHaveAttribute('aria-describedby', 'consent-error')
+    expect(
+      screen.getByRole('checkbox', { name: /does not diagnose autism/i }),
+    ).toHaveAttribute('aria-invalid', 'true')
+    expect(
+      screen.getByRole('checkbox', {
+        name: /minimized, anonymous research data/i,
+      }),
+    ).toHaveAttribute('aria-invalid', 'true')
+    expect(
+      screen.getByRole('checkbox', {
+        name: /optional — camera-based attention measures/i,
+      }),
+    ).not.toHaveAttribute('aria-invalid')
   })
 
   it('submits only when all three flags are accepted', async () => {
@@ -33,6 +51,9 @@ describe('Consent', () => {
     expect(
       screen.getByRole('checkbox', { name: /research-only prototype/i }),
     ).toHaveAttribute('aria-required', 'true')
+    expect(
+      screen.getByRole('checkbox', { name: /research-only prototype/i }),
+    ).not.toHaveAttribute('aria-invalid')
     expect(
       screen.getByRole('checkbox', { name: /does not diagnose autism/i }),
     ).toHaveAttribute('aria-required', 'true')

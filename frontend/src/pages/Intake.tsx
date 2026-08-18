@@ -64,6 +64,9 @@ export function Intake({
     )
   }
 
+  const ageInvalid = Boolean(localError && !ageRange)
+  const languageInvalid = Boolean(localError && !language.trim())
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (!ageRange || !language.trim()) {
@@ -98,6 +101,8 @@ export function Intake({
             onChange={(e) => setAgeRange(e.target.value)}
             required
             aria-required="true"
+            aria-invalid={ageInvalid ? true : undefined}
+            aria-describedby={ageInvalid ? 'intake-error' : undefined}
           >
             {AGE_RANGES.map((r) => (
               <option key={r} value={r}>
@@ -118,6 +123,8 @@ export function Intake({
             maxLength={32}
             required
             aria-required="true"
+            aria-invalid={languageInvalid ? true : undefined}
+            aria-describedby={languageInvalid ? 'intake-error' : undefined}
           />
         </label>
         <fieldset className="fieldset">

@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CI privacy grep now fails on missing scan paths, skips `*.test.ts(x)`,
+  and is configured to run on `feat/**` pushes. Unhandled errors are
+  covered by tests; consent/intake mark invalid required fields.
 - Unknown API error details are no longer shown on recovery screens.
 - README now states that raw media is never uploaded or retained, and
   documents that the gitignored attention clip must be added before a demo.
