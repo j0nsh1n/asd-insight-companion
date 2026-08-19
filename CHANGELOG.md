@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Final verification matrix, judge demo script, and release freeze
+  (Phase 8). No new product features.
 - Release hardening (Phase 7): skip-to-main link, required-field labels,
   safe 500 bodies, security headers, production-hidden API docs, a CI
   source check that raw-media APIs stay out of the app, and a demo
@@ -16,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- README first-time setup (venv, `npm install`, MediaPipe vendor). Demo
+  script says raw video is never uploaded. CI vs CodeQL triggers documented
+  accurately.
 - CI privacy grep now fails on missing scan paths, skips `*.test.ts(x)`,
   and is configured to run on `feat/**` pushes. Unhandled errors are
   covered by tests; consent/intake mark invalid required fields.
