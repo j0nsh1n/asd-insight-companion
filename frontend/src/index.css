@@ -18,8 +18,8 @@ html {
 }
 
 body {
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  background: #0b1016;
-  color: #e8eef4;
+  background: #ecfeff;
+  color: #164e63;
 }

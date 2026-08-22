@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Session screens share a calmer research layout: clearer type, cards, and
-  buttons. Safety copy, consent, and skip paths are unchanged.
+- Session screens use a light healthcare “research notebook” layout (cyan
+  paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
+  and skip paths are unchanged.
 
 ### Added
 
