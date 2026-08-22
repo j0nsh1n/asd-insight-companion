@@ -2,9 +2,8 @@
 
 ## Current State
 
-Branch `feat/phase-8-release`. Phase 8 is final validation, demo docs, and
-feature freeze. Phase 7 is on `main` (PR #16). Still no autism score,
-risk, or probability.
+Branch `feat/ui-visual-polish`. Visual refresh of all session screens on
+top of Phase 8 docs. Still no autism score, risk, or probability.
 
 Gates as of 2026-08-18 (Phase 8):
 
@@ -61,6 +60,6 @@ manual matrix still required for live demo paths.
 
 ## Session Handoff
 
-2026-08-18 · `feat/phase-8-release` · Phase 8 fix pass: CI trigger
-wording, first-time setup, demo-script “never uploaded.” Phase 9 not
+2026-08-18 · `feat/ui-visual-polish` · Visual refresh of all session
+screens (CSS + header/welcome). Safety copy unchanged. Phase 9 not
 started.

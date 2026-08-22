@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Session screens share a calmer research layout: clearer type, cards, and
+  buttons. Safety copy, consent, and skip paths are unchanged.
+
 ### Added
 
 - Final verification matrix, judge demo script, and release freeze

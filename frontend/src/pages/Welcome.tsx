@@ -21,7 +21,17 @@ export function Welcome({
         adults 18 and older. Participation is anonymous. You must complete consent
         before any intake questions.
       </p>
-      <p className="muted">Backend: {backendLabel}</p>
+      <p
+        className={
+          backendLabel === 'ok'
+            ? 'backend-line status-ok'
+            : backendLabel === 'error'
+              ? 'backend-line status-error'
+              : 'backend-line'
+        }
+      >
+        Backend: {backendLabel}
+      </p>
       {error && (
         <p className="status-error" role="alert">
           {error}
