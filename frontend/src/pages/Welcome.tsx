@@ -1,5 +1,7 @@
+import type { BackendLabel } from '../App'
+
 type WelcomeProps = {
-  backendLabel: string
+  backendLabel: BackendLabel
   busy: boolean
   error: string | null
   onStart: () => void

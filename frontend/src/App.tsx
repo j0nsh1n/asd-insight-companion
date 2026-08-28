@@ -35,7 +35,7 @@ import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
-type BackendLabel = 'checking…' | 'ok' | 'error'
+export type BackendLabel = 'checking…' | 'ok' | 'error'
 type CalibrationOutcome = 'passed' | 'limited'
 
 function App() {

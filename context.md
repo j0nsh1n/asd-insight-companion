@@ -3,7 +3,9 @@
 ## Current State
 
 Branch `feat/ui-visual-polish`. Visual refresh of all session screens on
-top of Phase 8 docs. Still no autism score, risk, or probability.
+top of Phase 8 docs, plus a review-fix pass (2026-08-28): control borders
+darkened to WCAG non-text contrast, CSS token/selector cleanups. Still no
+autism score, risk, or probability.
 
 Gates as of 2026-08-18 (Phase 8):
 
@@ -60,6 +62,8 @@ manual matrix still required for live demo paths.
 
 ## Session Handoff
 
-2026-08-18 · `feat/ui-visual-polish` · Healthcare cyan “research notebook”
-UI (ui-ux-pro-max + frontend-design). Safety copy unchanged. Phase 9 not
-started.
+2026-08-28 · `feat/ui-visual-polish` · Review-fix pass: field/button
+borders now pass WCAG 1.4.11 (#0891b2), dead `.backend-line` selector
+fixed, color tokens moved to `:root`, `BackendLabel` union typed through
+to Welcome. Frontend gates re-run green. Safety copy unchanged. Phase 9
+not started.

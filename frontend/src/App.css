@@ -6,12 +6,12 @@
   Signature: amber non-diagnostic banner; lab-notebook left rule + tabular data.
   Avoid: neon, purple AI gradients, autoplay video hero, motion-heavy UI.
 */
-.app-shell {
+:root {
   --bg: #ecfeff;
   --bg-panel: #ffffff;
   --bg-inset: #f0fdff;
   --border: #a5f3fc;
-  --border-strong: #67e8f9;
+  --border-strong: #0891b2;
   --text: #164e63;
   --muted: #155e75;
   --accent: #0e7490;
@@ -28,6 +28,9 @@
   --shadow: 0 10px 28px rgb(8 145 178 / 10%);
   --font-body: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
   --font-data: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+}
+
+.app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -189,8 +192,8 @@
   color: var(--muted);
 }
 
-.backend-line .status-ok,
-.backend-line .status-error {
+.backend-line.status-ok,
+.backend-line.status-error {
   margin: 0;
 }
 
@@ -255,7 +258,7 @@
 .field select,
 .field textarea {
   background: var(--bg-inset);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   color: var(--text);
   padding: 0.6rem 0.7rem;
@@ -265,7 +268,7 @@
 .field input:hover,
 .field select:hover,
 .field textarea:hover {
-  border-color: var(--border-strong);
+  border-color: var(--accent);
 }
 
 .field-hint {

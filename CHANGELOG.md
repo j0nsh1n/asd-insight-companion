@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session screens use a light healthcare “research notebook” layout (cyan
   paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
   and skip paths are unchanged.
+- Welcome tagline drops the stale phase number.
+- Form fields and buttons use darker cyan borders so controls stay visible
+  on the light panels (WCAG non-text contrast).
 
 ### Added
 
