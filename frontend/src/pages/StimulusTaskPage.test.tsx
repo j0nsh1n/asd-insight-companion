@@ -111,15 +111,19 @@ describe('StimulusTaskPage', () => {
     expect(player.tagName).toBe('VIDEO')
     expect(player).toHaveAttribute('src', task.video_file)
     expect(player).toHaveFocus()
+    expect(player.querySelector('track')).toBeNull()
+    expect(player).not.toHaveAttribute('autoplay')
+    expect((player as HTMLVideoElement).paused).toBe(true)
   })
 
-  it('shows an alert when the clip fails to load and skip remains', async () => {
+  it('shows an alert when the clip fails to load and skip still advances', async () => {
     const user = userEvent.setup()
+    const onSkip = vi.fn()
     render(
       <StimulusTaskPage
         sessionId="sess-1"
         onBack={vi.fn()}
-        onSkip={vi.fn()}
+        onSkip={onSkip}
       />,
     )
     await user.click(screen.getByRole('button', { name: /start video task/i }))
@@ -135,6 +139,8 @@ describe('StimulusTaskPage', () => {
     expect(
       screen.getByRole('button', { name: /^back$/i }),
     ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /skip video task/i }))
+    expect(onSkip).toHaveBeenCalledTimes(1)
   })
 
   it('does not request the camera when consent was declined', async () => {
