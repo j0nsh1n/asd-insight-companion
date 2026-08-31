@@ -1,11 +1,18 @@
-# Transcript — Two-Person Object Organization (placeholder)
+# Descriptive Transcript — Neutral Two-Person Conversation
 
-This is a placeholder descriptive transcript. Replace it when the study-approved
-recording and captions are final.
+0:00–0:08
+Two adults are seated at a table in a neutral setting.
 
-Two adults sit at a table with everyday objects (for example cups, boxes, and
-small household items). They sort and pass the objects, placing them into
-simple groups. There is no spoken instruction about how to watch, and nothing
-in the scene asks the viewer to look at faces or eyes.
+0:08–0:20
+One person gestures toward objects on the table. The other person watches
+and responds with a gesture.
 
-Duration target: about 45 seconds.
+0:20–0:35
+Both people look between one another and the objects while interacting.
+
+0:35–0:45
+The interaction ends in a neutral manner.
+
+Replace this transcript after selecting and trimming the final licensed clip.
+It must describe visible action accurately.
+This clip is silent. There is no dialogue and no caption track.

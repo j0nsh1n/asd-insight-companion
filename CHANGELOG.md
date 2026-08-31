@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Welcome tagline drops the stale phase number.
 - Form fields and buttons use darker cyan borders so controls stay visible
   on the light panels (WCAG non-text contrast).
+- The optional video task moves to a licensed, silent stock clip: captions
+  are required only when a clip has dialogue, and a descriptive transcript
+  is provided instead. The final clip has not been selected yet.
 
 ### Added
 
