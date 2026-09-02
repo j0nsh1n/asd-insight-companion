@@ -2,9 +2,10 @@
 
 ## Current State
 
-Branch `feat/phase-8-release`. Phase 8 is final validation, demo docs, and
-feature freeze. Phase 7 is on `main` (PR #16). Still no autism score,
-risk, or probability.
+Branch `feat/ui-visual-polish`. Visual refresh of all session screens on
+top of Phase 8 docs, plus a review-fix pass (2026-08-28): control borders
+darkened to WCAG non-text contrast, CSS token/selector cleanups. Still no
+autism score, risk, or probability.
 
 Gates as of 2026-08-18 (Phase 8):
 
@@ -13,9 +14,16 @@ Gates as of 2026-08-18 (Phase 8):
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
 | Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
 
-Known gaps: placeholder `.mp4` is gitignored; no withdraw/TTL/auth;
-SQLite unencrypted; calibration not stored on the server; no Playwright;
-manual matrix still required for live demo paths.
+Known gaps: no withdraw/TTL/auth; SQLite unencrypted; calibration not
+stored on the server; no Playwright; manual matrix still required for live
+demo paths.
+
+Stimulus status: licensed-stock stimulus preparation. The optional task
+targets one locally hosted, licensed, silent Pexels stock clip (generic
+demo asset, not a validated autism-assessment stimulus; final clip not yet
+selected). Remaining manual steps: select and trim the clip, fill the
+source/license fields in docs/STIMULUS_RIGHTS_AND_DESIGN.md, replace the
+placeholder transcript, verify playback and the skip path.
 
 ## Repo Landmarks
 
@@ -58,9 +66,14 @@ manual matrix still required for live demo paths.
   and never displayed to participants or returned in the results payload.
 - Client views are not URL-routed. `resolveView` clamps a requested view
   to the earliest allowed server stage.
+- Stimulus clip is silent: no caption track; the descriptive transcript is
+  the accessibility accommodation. Captions return only if a future clip
+  has dialogue.
 
 ## Session Handoff
 
-2026-08-18 · `feat/phase-8-release` · Phase 8 fix pass: CI trigger
-wording, first-time setup, demo-script “never uploaded.” Phase 9 not
-started.
+2026-08-28 · `feat/ui-visual-polish` · Stimulus docs pass: licensed silent
+stock clip framing (placeholder transcript, rights/license template,
+verification rows 17–22, demo spoken line, README/CHANGELOG). Final clip
+not yet selected; code and config in this change are owned by another
+agent. Phase 9 not started.

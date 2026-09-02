@@ -68,8 +68,12 @@ Place an approved attention clip at
 `frontend/public/stimuli/social-interaction-v1.mp4`. The file is gitignored
 on purpose and is not in the repo. Without it, the video step shows a
 skip-able notice (“The video clip isn't available in this build”) instead of
-playing. Rights, captions, and replacement guidance:
+playing. Rights, transcript, and replacement guidance:
 [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
+
+The current stimulus is a locally hosted, licensed, silent stock clip used
+for technical demonstration. It is not a validated autism-assessment
+stimulus. Raw participant webcam media is never uploaded or retained.
 
 ## Environment
 

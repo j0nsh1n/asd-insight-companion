@@ -58,6 +58,8 @@ frontend/public/mediapipe/face_landmarker.task
 
 # Local-only notes / agent ops (NOT for hackathon submission)
 .local/
+.grok/
+opencode.json
 agents.local.md
 AGENTS.local.md
 NOTES_LOCAL.md

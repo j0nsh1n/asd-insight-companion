@@ -2,7 +2,7 @@ import { type Ref } from 'react'
 
 export type StimulusPlayerProps = {
   src: string
-  captionsSrc: string
+  captionsSrc?: string
   label: string
   videoRef: Ref<HTMLVideoElement>
   onError?: () => void
@@ -25,6 +25,11 @@ export function StimulusPlayer({
   onPause,
   onEnded,
 }: StimulusPlayerProps) {
+  const captionTrackSrc =
+    typeof captionsSrc === 'string' && captionsSrc.trim().length > 0
+      ? captionsSrc
+      : undefined
+
   return (
     <div className="stimulus-video-wrap">
       <video
@@ -41,7 +46,15 @@ export function StimulusPlayer({
         onPause={onPause}
         onEnded={onEnded}
       >
-        <track kind="captions" src={captionsSrc} srcLang="en" label="English" default />
+        {captionTrackSrc ? (
+          <track
+            kind="captions"
+            src={captionTrackSrc}
+            srcLang="en"
+            label="English"
+            default
+          />
+        ) : null}
       </video>
     </div>
   )

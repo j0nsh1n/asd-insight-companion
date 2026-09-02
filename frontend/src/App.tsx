@@ -35,7 +35,7 @@ import { StimulusTaskPage } from './pages/StimulusTaskPage'
 import { Welcome } from './pages/Welcome'
 import './App.css'
 
-type BackendLabel = 'checking…' | 'ok' | 'error'
+export type BackendLabel = 'checking…' | 'ok' | 'error'
 type CalibrationOutcome = 'passed' | 'limited'
 
 function App() {
@@ -229,7 +229,7 @@ function App() {
         <header>
           <h1>ASD Insight Companion</h1>
           <p className="tagline">
-            Research-only ASD-trait prescreen prototype (Phase 6)
+            Research-only ASD-trait prescreen prototype
           </p>
           {session && (
             <p className="muted session-meta">

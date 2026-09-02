@@ -29,6 +29,12 @@ Related automated commands: `docs/TESTING.md`. Demo walkthrough:
 | 14. Narrow layout (360px) | Primary actions visible; no horizontal overflow on core screens | MANUAL VERIFICATION REQUIRED | | | Mobile CSS stacks actions; needs a human check |
 | 15. Privacy (DevTools Network) | Feature POST is JSON numbers only; `media_uploaded: false`; no video/audio/image/frame | MANUAL VERIFICATION REQUIRED | | | Automated: extra media keys 422; CI privacy grep |
 | 16. Production config | `/docs` `/redoc` `/openapi.json` 404 when `ENVIRONMENT=production`; 500 is `internal_error`; security headers present | MANUAL VERIFICATION REQUIRED | | | Automated: docs-hidden test; 500/HTTP tests; headers on `/health` |
+| 17. Final selected local stimulus file loads and plays | Trimmed licensed clip plays with pause, restart, and keyboard controls | MANUAL VERIFICATION REQUIRED | | | Final clip not yet selected; see docs/STIMULUS_RIGHTS_AND_DESIGN.md |
+| 18. Silent clip requests no microphone permission | No audio `getUserMedia` prompt on the stimulus step | MANUAL VERIFICATION REQUIRED | | | Clip has no audio stream; camera step is separate and still optional |
+| 19. Transcript accurately matches the final trimmed clip | Descriptive transcript reviewed against the trimmed picture | MANUAL VERIFICATION REQUIRED | | | Placeholder transcript until the final clip is trimmed |
+| 20. Skip path works when the clip file is missing | Skip-able alert; skip completes; camera/tracking stop | MANUAL VERIFICATION REQUIRED | | | Extends row 8 to the final-clip state |
+| 21. DevTools Network shows only app/static asset loading; no participant raw-media upload | No video/audio/image/frame upload anywhere; features are JSON numbers only | MANUAL VERIFICATION REQUIRED | | | Extends row 15 to the stimulus step |
+| 22. Stimulus source and license fields are complete before the demo | All rights fields filled and confirmations ticked in docs/STIMULUS_RIGHTS_AND_DESIGN.md | MANUAL VERIFICATION REQUIRED | | | Fields are blank until the developer selects the clip |
 
 ## Automated coverage (does not replace the matrix)
 

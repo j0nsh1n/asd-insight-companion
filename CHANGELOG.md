@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Session screens use a light healthcare “research notebook” layout (cyan
+  paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
+  and skip paths are unchanged.
+- Welcome tagline drops the stale phase number.
+- Form fields and buttons use darker cyan borders so controls stay visible
+  on the light panels (WCAG non-text contrast).
+- The optional video task moves to a licensed, silent stock clip: captions
+  are required only when a clip has dialogue, and a descriptive transcript
+  is provided instead. The final clip has not been selected yet.
+
 ### Added
 
 - Final verification matrix, judge demo script, and release freeze

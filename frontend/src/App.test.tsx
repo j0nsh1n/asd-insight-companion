@@ -5,6 +5,7 @@ import App from './App'
 import * as api from './lib/api'
 import * as camera from './lib/camera'
 import * as sessionStore from './lib/sessionStorage'
+import { getStimulusTaskManifest } from './lib/stimuliManifest'
 
 vi.mock('./lib/camera', async () => {
   const actual = await vi.importActual<typeof import('./lib/camera')>(
@@ -326,7 +327,7 @@ describe('App Phase 1 flow', () => {
       screen.getByRole('button', { name: /skip calibration camera/i }),
     )
     expect(
-      screen.getByRole('heading', { name: /two-person object organization/i }),
+      screen.getByRole('heading', { name: getStimulusTaskManifest().title }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /enable camera sampling/i }),
