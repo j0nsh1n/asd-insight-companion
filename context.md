@@ -12,7 +12,7 @@ Gates as of 2026-08-18 (Phase 8):
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (103 tests) |
 
 Known gaps: no withdraw/TTL/auth; SQLite unencrypted; calibration not
 stored on the server; no Playwright; manual matrix still required for live

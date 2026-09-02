@@ -26,7 +26,7 @@
     "validated_autism_stimulus": false,
     "purpose": "Technical demonstration of an optional browser-local visual social-video task and privacy-preserving aggregate-feature pipeline.",
     "not_for_medical_decisions": true,
-    "task_limitation": "This silent demo task does not assess speech, language comprehension, auditory social attention, vocal prosody, or any medical condition."
+    "task_limitation": "This silent demo task does not assess speech, language comprehension, auditory social attention, vocal prosody, or any medical condition. The 10-second demo clip also yields a shorter tracking window than a production stimulus would, so aggregate features are correspondingly sparse."
   },
   "accessibility": {
     "dialogue_captions_required": false,
