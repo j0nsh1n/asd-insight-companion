@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- After the attention clip ends, Skip is hidden and Continue advances the
+  session. A Dark mode / Light mode toggle in the header persists in
+  `localStorage` (appearance only; not research data).
 - Pre-submission polish: the webcam and Face Landmarker stop when the
   clip errors, the step unmounts, or the tab hides (`pagehide`) on the
   stimulus, camera-check, and calibration screens. Double-click Start or

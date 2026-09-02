@@ -116,6 +116,12 @@ describe('StimulusTaskPage', () => {
     expect(player.querySelector('track')).toBeNull()
     expect(player).not.toHaveAttribute('autoplay')
     expect((player as HTMLVideoElement).paused).toBe(true)
+    expect(
+      screen.queryByRole('button', { name: /skip video task/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^continue$/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('shows an alert when the clip fails to load and skip still advances', async () => {
@@ -159,7 +165,7 @@ describe('StimulusTaskPage', () => {
     expect(camera.requestVideoOnlyStream).not.toHaveBeenCalled()
   })
 
-  it('starts the camera on Start when consent allows and stops it on skip', async () => {
+  it('starts the camera on Start when consent allows and continues after the clip ends', async () => {
     const user = userEvent.setup()
     const stream = makeStream()
     vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
@@ -176,8 +182,16 @@ describe('StimulusTaskPage', () => {
     await waitFor(() => {
       expect(camera.requestVideoOnlyStream).toHaveBeenCalledTimes(1)
     })
-    await user.click(screen.getByRole('button', { name: /skip video task/i }))
+    expect(
+      screen.queryByRole('button', { name: /skip video task/i }),
+    ).not.toBeInTheDocument()
+    const clip = document.querySelector('video.stimulus-video') as HTMLVideoElement
+    fireEvent.play(clip)
+    fireEvent.ended(clip)
     expect(camera.stopMediaStream).toHaveBeenCalled()
+    const cont = screen.getByRole('button', { name: /^continue$/i })
+    expect(cont).toHaveFocus()
+    await user.click(cont)
     expect(onSkip).toHaveBeenCalledTimes(1)
     const payload = onSkip.mock.calls[0][0] as {
       media_uploaded: boolean
@@ -355,7 +369,10 @@ describe('StimulusTaskPage', () => {
     const clip = document.querySelector('video.stimulus-video') as HTMLVideoElement
     fireEvent.play(clip)
     fireEvent.ended(clip)
-    await user.click(screen.getByRole('button', { name: /skip video task/i }))
+    expect(
+      screen.queryByRole('button', { name: /skip video task/i }),
+    ).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^continue$/i }))
     expect(onSkip).toHaveBeenCalledTimes(1)
     const payload = onSkip.mock.calls[0][0] as { task_completed: boolean }
     expect(payload.task_completed).toBe(true)

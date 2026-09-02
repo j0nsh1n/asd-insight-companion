@@ -25,7 +25,8 @@ Script: [DEMO_SCRIPT.md](DEMO_SCRIPT.md). Matrix:
 
 Welcome → three required consent items (camera optional) → intake →
 placeholder questionnaire → camera check or skip → calibration or skip →
-watch or skip the clip → research-session summary.
+watch the clip and Continue, or Skip before Start → research-session
+summary.
 
 ## Camera-denied fallback
 

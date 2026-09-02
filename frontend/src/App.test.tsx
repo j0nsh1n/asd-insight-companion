@@ -6,6 +6,7 @@ import * as api from './lib/api'
 import * as camera from './lib/camera'
 import * as sessionStore from './lib/sessionStorage'
 import { getStimulusTaskManifest } from './lib/stimuliManifest'
+import { THEME_STORAGE_KEY } from './lib/theme'
 
 vi.mock('./lib/camera', async () => {
   const actual = await vi.importActual<typeof import('./lib/camera')>(
@@ -88,6 +89,8 @@ const baseSession = (
 describe('App Phase 1 flow', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    localStorage.removeItem(THEME_STORAGE_KEY)
+    delete document.documentElement.dataset.theme
     mocked.fetchHealth.mockReset()
     mocked.createSession.mockReset()
     mocked.getSession.mockReset()
@@ -165,6 +168,28 @@ describe('App Phase 1 flow', () => {
     await waitFor(() => {
       expect(screen.getByText(/backend: ok/i)).toBeInTheDocument()
     })
+    expect(
+      screen.getByRole('button', { name: /switch to (dark|light) mode/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('toggles dark and light appearance without changing the session', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const toggle = screen.getByRole('button', { name: /switch to dark mode/i })
+    await user.click(toggle)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark')
+    expect(
+      screen.getByRole('button', { name: /switch to light mode/i }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    await user.click(
+      screen.getByRole('button', { name: /switch to light mode/i }),
+    )
+    expect(document.documentElement.dataset.theme).toBe('light')
+    expect(
+      screen.getByRole('heading', { name: /welcome/i }),
+    ).toBeInTheDocument()
   })
 
   it('starts a session and reaches consent (cannot skip to intake)', async () => {

@@ -38,7 +38,7 @@ Start with `./scripts/dev.sh`.
 
 | Case | What to do | Expected |
 |---|---|---|
-| Happy path | Accept consent (camera on), intake, finish questionnaire, pass camera, finish calibration, watch or skip clip after starting it | Results show questionnaire notes; video status completed or skipped honestly; safety notice visible; next-step professional wording |
+| Happy path | Accept consent (camera on), intake, finish questionnaire, pass camera, finish calibration, watch the clip to the end, Continue | Results show questionnaire notes; video status completed honestly; Continue appears after the clip ends; safety notice visible |
 | Consent decline | Leave a required checkbox off | Cannot reach intake |
 | Incomplete questionnaire | Stop mid-questionnaire, refresh, resume | Returns to the unanswered item; cannot open results |
 | Camera denied | Decline camera at consent or deny the browser prompt | Continue without camera; partial results; no getUserMedia after decline |

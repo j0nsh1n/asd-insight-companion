@@ -30,9 +30,11 @@ export function StimulusTaskPage({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [started, setStarted] = useState(false)
   const [clipError, setClipError] = useState(false)
+  const [clipEnded, setClipEnded] = useState(false)
   const [transcript, setTranscript] = useState<string | null>(null)
   const tracking = useStimulusTracking(cameraAllowed, videoRef)
   const startedLock = useRef(false)
+  const continueRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -50,10 +52,16 @@ export function StimulusTaskPage({
   }, [task.transcript_file])
 
   useEffect(() => {
-    if (started) {
+    if (started && !clipEnded) {
       videoRef.current?.focus()
     }
-  }, [started])
+  }, [started, clipEnded])
+
+  useEffect(() => {
+    if (clipEnded) {
+      continueRef.current?.focus()
+    }
+  }, [clipEnded])
 
   const startTask = () => {
     if (startedLock.current) return
@@ -102,6 +110,7 @@ export function StimulusTaskPage({
           onEnded={() => {
             tracking.markTaskCompleted()
             tracking.stopAndClear()
+            setClipEnded(true)
           }}
         />
       ) : (
@@ -133,6 +142,13 @@ export function StimulusTaskPage({
         </p>
       )}
 
+      {clipEnded && !clipError && (
+        <p className="status-ok" role="status">
+          The video finished. Continue to save this step. Camera sampling has
+          stopped in this browser.
+        </p>
+      )}
+
       <details className="stimulus-transcript">
         <summary>Descriptive transcript</summary>
         {transcript ? (
@@ -157,13 +173,25 @@ export function StimulusTaskPage({
             Start video task
           </button>
         )}
-        <button
-          type="button"
-          className="btn"
-          onClick={() => leave(onSkip)}
-        >
-          Skip video task
-        </button>
+        {(!started || clipError) && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => leave(onSkip)}
+          >
+            Skip video task
+          </button>
+        )}
+        {clipEnded && !clipError && (
+          <button
+            ref={continueRef}
+            type="button"
+            className="btn primary"
+            onClick={() => leave(onSkip)}
+          >
+            Continue
+          </button>
+        )}
       </div>
     </section>
   )

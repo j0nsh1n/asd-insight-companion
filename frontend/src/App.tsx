@@ -20,6 +20,12 @@ import {
 } from './lib/assessmentFlow'
 import { friendlyError, isFeaturesAlreadyRecorded } from './lib/friendlyError'
 import {
+  applyTheme,
+  resolveInitialTheme,
+  toggleTheme,
+  type ColorTheme,
+} from './lib/theme'
+import {
   clearSessionId,
   loadSessionId,
   saveSessionId,
@@ -51,6 +57,11 @@ function App() {
   const [calibrationOutcome, setCalibrationOutcome] =
     useState<CalibrationOutcome>('limited')
   const submitLock = useRef(false)
+  const [theme, setTheme] = useState<ColorTheme>(() => resolveInitialTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
 
   useEffect(() => {
     let cancelled = false
@@ -238,17 +249,30 @@ function App() {
             errors are announced when they change.
           </p>
         )}
-        <header>
-          <h1>ASD Insight Companion</h1>
-          <p className="tagline">
-            Research-only ASD-trait prescreen prototype
-          </p>
-          {session && (
-            <p className="muted session-meta">
-              Session {session.id.slice(0, 8)}… · stage: {session.stage} · API{' '}
-              {API_BASE_URL}
+        <header className="app-header">
+          <div>
+            <h1>ASD Insight Companion</h1>
+            <p className="tagline">
+              Research-only ASD-trait prescreen prototype
             </p>
-          )}
+            {session && (
+              <p className="muted session-meta">
+                Session {session.id.slice(0, 8)}… · stage: {session.stage} · API{' '}
+                {API_BASE_URL}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn theme-toggle"
+            aria-pressed={theme === 'dark'}
+            aria-label={
+              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            }
+            onClick={() => setTheme((current) => toggleTheme(current))}
+          >
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
         </header>
         <div className="sr-only" role="status" aria-live="polite">
           Current step: {VIEW_ANNOUNCEMENTS[shown]}

@@ -24,10 +24,44 @@
   --ok: #047857;
   --err: #b91c1c;
   --focus: #0e7490;
+  --accent-hover: #155e75;
+  --chip-bg: #cffafe;
   --radius: 12px;
   --shadow: 0 10px 28px rgb(8 145 178 / 10%);
   --font-body: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
   --font-data: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+}
+
+/* Night-clinic notebook: teal paper inverted, not near-black SaaS. */
+[data-theme="dark"] {
+  --bg: #072a33;
+  --bg-panel: #0b3a45;
+  --bg-inset: #0a313b;
+  --border: #155e75;
+  --border-strong: #22d3ee;
+  --text: #ecfeff;
+  --muted: #a5f3fc;
+  --accent: #67e8f9;
+  --accent-bg: #0891b2;
+  --accent-border: #67e8f9;
+  --accent-text: #ecfeff;
+  --warn-bg: #422006;
+  --warn-border: #fbbf24;
+  --warn-text: #fef3c7;
+  --ok: #6ee7b7;
+  --err: #fca5a5;
+  --focus: #67e8f9;
+  --accent-hover: #0e7490;
+  --chip-bg: #155e75;
+  --shadow: 0 10px 28px rgb(0 0 0 / 35%);
+}
+
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 .app-shell {
@@ -126,8 +160,22 @@
   box-sizing: border-box;
 }
 
-.app-main header {
+.app-main header,
+.app-header {
   margin-bottom: 1.25rem;
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.theme-toggle {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
 }
 
 .app-main h1 {
@@ -342,7 +390,7 @@ textarea:focus-visible,
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: #155e75;
+  background: var(--accent-hover);
 }
 
 .btn.primary:focus-visible {
@@ -423,7 +471,7 @@ textarea:focus-visible,
 
 .scale-btn.selected {
   border-color: var(--accent-border);
-  background: #cffafe;
+  background: var(--chip-bg);
   color: var(--text);
 }
 
@@ -626,7 +674,7 @@ textarea:focus-visible,
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--accent);
-  background: #cffafe;
+  background: var(--chip-bg);
   border: 1px solid var(--border);
   border-radius: 999px;
   text-align: center;
@@ -710,11 +758,15 @@ textarea:focus-visible,
   }
 
   .button-row .btn,
-  .btn {
+  .btn:not(.theme-toggle) {
     width: 100%;
     min-height: 2.75rem;
     justify-content: center;
     padding: 0.7rem 1rem;
+  }
+
+  .theme-toggle {
+    min-height: 2.75rem;
   }
 
   .field input,

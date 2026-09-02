@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>ASD Insight Companion</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('asd-color-theme')
+          var theme =
+            stored === 'dark' || stored === 'light'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (err) {
+          /* appearance only */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
