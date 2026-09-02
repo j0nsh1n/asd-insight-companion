@@ -12,18 +12,17 @@ Gates as of 2026-08-18 (Phase 8):
 | Gate | Result |
 |---|---|
 | Backend `ruff` / `ruff format --check` / `mypy` / `pytest` | pass (79 tests) |
-| Frontend `oxlint` / `vitest` / `build` | pass (100 tests) |
+| Frontend `oxlint` / `vitest` / `build` | pass (103 tests) |
 
 Known gaps: no withdraw/TTL/auth; SQLite unencrypted; calibration not
 stored on the server; no Playwright; manual matrix still required for live
 demo paths.
 
-Stimulus status: licensed-stock stimulus preparation. The optional task
-targets one locally hosted, licensed, silent Pexels stock clip (generic
-demo asset, not a validated autism-assessment stimulus; final clip not yet
-selected). Remaining manual steps: select and trim the clip, fill the
-source/license fields in docs/STIMULUS_RIGHTS_AND_DESIGN.md, replace the
-placeholder transcript, verify playback and the skip path.
+Stimulus status: licensed silent stock clip SELECTED and encoded — Pexels
+id 6585548 by Artem Podrez, 10.4 s, silent, 1280x720, .mp4, gitignored
+(generic demo asset, not a validated autism-assessment stimulus). Clip
+selection is DONE. Remaining manual steps are only playback/controls
+verification and the docs/FINAL_VERIFICATION.md manual rows.
 
 ## Repo Landmarks
 
@@ -72,8 +71,9 @@ placeholder transcript, verify playback and the skip path.
 
 ## Session Handoff
 
-2026-08-28 · `feat/ui-visual-polish` · Stimulus docs pass: licensed silent
-stock clip framing (placeholder transcript, rights/license template,
-verification rows 17–22, demo spoken line, README/CHANGELOG). Final clip
-not yet selected; code and config in this change are owned by another
-agent. Phase 9 not started.
+2026-09-02 · `feat/ui-visual-polish` · Stimulus is final and encoded:
+Pexels 6585548 by Artem Podrez (10.4 s, silent, 1280x720); context.md,
+CHANGELOG.md, and the freeze amendment in docs/RELEASE_FREEZE.md now match
+the selected clip. Code, config, and tests in this change are owned by
+another agent. Remaining: playback/controls verification and the
+FINAL_VERIFICATION manual rows. Phase 9 not started.

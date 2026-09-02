@@ -206,4 +206,49 @@ describe('StimulusTaskPage', () => {
     fireEvent.ended(clip as HTMLVideoElement)
     expect(camera.stopMediaStream).toHaveBeenCalled()
   })
+
+  it('never requests microphone audio at the stimulus step', async () => {
+    const user = userEvent.setup()
+    const getUserMedia = vi.fn().mockResolvedValue(makeStream())
+    vi.stubGlobal('navigator', {
+      mediaDevices: { getUserMedia },
+    })
+    const actual = await vi.importActual<typeof import('../lib/camera')>(
+      '../lib/camera',
+    )
+    vi.mocked(camera.requestVideoOnlyStream).mockImplementation(
+      actual.requestVideoOnlyStream,
+    )
+
+    const granted = render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    await waitFor(() => {
+      expect(getUserMedia.mock.calls.length).toBeGreaterThan(0)
+    })
+    for (const args of getUserMedia.mock.calls) {
+      const constraints = args[0] as MediaStreamConstraints
+      expect(constraints.audio).toBe(false)
+      expect(constraints.audio).not.toBe(true)
+    }
+    granted.unmount()
+    getUserMedia.mockClear()
+
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={false}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    expect(getUserMedia).not.toHaveBeenCalled()
+  })
 })

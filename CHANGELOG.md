@@ -17,7 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on the light panels (WCAG non-text contrast).
 - The optional video task moves to a licensed, silent stock clip: captions
   are required only when a clip has dialogue, and a descriptive transcript
-  is provided instead. The final clip has not been selected yet.
+  is provided instead. Stimulus status: licensed silent stock clip SELECTED
+  and encoded — Pexels id 6585548 by Artem Podrez, 10.4 s, silent, 1280x720,
+  .mp4, gitignored. Clip selection is DONE; remaining manual steps are only
+  playback/controls verification and the docs/FINAL_VERIFICATION.md manual
+  rows.
+- Release freeze amended (2026-09-01, see docs/RELEASE_FREEZE.md): the
+  stimulus replacement with a licensed silent stock clip and the CSS-only
+  session-screen restyle are permitted post-freeze. Every other freeze rule
+  still applies.
 
 ### Added
 
