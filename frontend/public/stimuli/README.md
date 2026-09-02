@@ -4,7 +4,7 @@ Expected local file (gitignored; drop in before a real session):
 
 - `social-interaction-v1.mp4`
 
-Committed placeholder:
+Committed transcript (matched to the licensed silent clip):
 
 - `social-interaction-v1.transcript.md`
 
