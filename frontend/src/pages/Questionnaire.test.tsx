@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as api from '../lib/api'
@@ -302,6 +302,62 @@ describe('Questionnaire', () => {
       expect(document.getElementById('question-text-ph_02')).toHaveTextContent(
         /comfortable starting conversations/i,
       )
+    })
+  })
+
+  it('posts a question response only once if Next is clicked twice', async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.fetchQuestionnaireProgress).mockResolvedValue({
+      session_id: 'sess-1',
+      stage: 'intake_complete',
+      bank_id: bank.bank_id,
+      required_count: 2,
+      answered_count: 0,
+      answered: {},
+      next_question_id: 'ph_01',
+      ordered_question_ids: ['ph_01', 'ph_02'],
+      session: baseSession('intake_complete'),
+    })
+    let resolvePost!: (value: api.QuestionResponseResult) => void
+    vi.mocked(api.postQuestionResponse).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve
+        }),
+    )
+
+    render(
+      <Questionnaire
+        sessionId="sess-1"
+        initialSession={baseSession('intake_complete')}
+        onSessionUpdate={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    )
+
+    await screen.findByText(/prefer familiar routines/i)
+    await user.click(screen.getByRole('button', { name: /3\s*agree/i }))
+    const next = screen.getByRole('button', { name: /^next$/i })
+    fireEvent.click(next)
+    fireEvent.click(next)
+    expect(api.postQuestionResponse).toHaveBeenCalledTimes(1)
+    resolvePost({
+      session: baseSession('questionnaire_in_progress'),
+      response: {
+        question_id: 'ph_01',
+        answer_value: 3,
+        shown_at: 't0',
+        answered_at: 't1',
+        time_to_first_interaction_ms: 10,
+        total_time_on_question_ms: 100,
+        answer_change_count: 0,
+      },
+      answered_count: 1,
+      required_count: 2,
+      next_question_id: 'ph_02',
+    })
+    await waitFor(() => {
+      expect(document.getElementById('question-text-ph_02')).toBeTruthy()
     })
   })
 })

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as camera from '../lib/camera'
+import * as faceLandmarker from '../lib/faceLandmarker'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
 import { StimulusTaskPage } from './StimulusTaskPage'
 
@@ -47,6 +48,7 @@ describe('StimulusTaskPage', () => {
     )
     vi.mocked(camera.requestVideoOnlyStream).mockReset()
     vi.mocked(camera.stopMediaStream).mockReset()
+    vi.mocked(faceLandmarker.closeFaceLandmarker).mockReset()
     HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
   })
 
@@ -250,5 +252,111 @@ describe('StimulusTaskPage', () => {
     )
     await user.click(screen.getByRole('button', { name: /start video task/i }))
     expect(getUserMedia).not.toHaveBeenCalled()
+  })
+
+  it('stops the camera when the clip fails to load', async () => {
+    const user = userEvent.setup()
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    await waitFor(() => {
+      expect(camera.requestVideoOnlyStream).toHaveBeenCalled()
+    })
+    fireEvent.error(document.querySelector('video.stimulus-video') as HTMLVideoElement)
+    expect(camera.stopMediaStream).toHaveBeenCalled()
+    expect(faceLandmarker.closeFaceLandmarker).toHaveBeenCalled()
+    expect(
+      screen.getByText(/the video clip isn't available in this build/i),
+    ).toBeInTheDocument()
+  })
+
+  it('starts the camera only once if Start is clicked twice', async () => {
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    const start = screen.getByRole('button', { name: /start video task/i })
+    fireEvent.click(start)
+    fireEvent.click(start)
+    await waitFor(() => {
+      expect(camera.requestVideoOnlyStream).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('stops the camera on Back after Start', async () => {
+    const user = userEvent.setup()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())
+    const onBack = vi.fn()
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={onBack}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    await waitFor(() => {
+      expect(camera.requestVideoOnlyStream).toHaveBeenCalled()
+    })
+    await user.click(screen.getByRole('button', { name: /^back$/i }))
+    expect(camera.stopMediaStream).toHaveBeenCalled()
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops the camera and landmarker on pagehide during the clip', async () => {
+    const user = userEvent.setup()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    await waitFor(() => {
+      expect(camera.requestVideoOnlyStream).toHaveBeenCalled()
+    })
+    vi.mocked(camera.stopMediaStream).mockClear()
+    vi.mocked(faceLandmarker.closeFaceLandmarker).mockClear()
+    window.dispatchEvent(new Event('pagehide'))
+    expect(camera.stopMediaStream).toHaveBeenCalled()
+    expect(faceLandmarker.closeFaceLandmarker).toHaveBeenCalled()
+  })
+
+  it('closes the landmarker when the stimulus step unmounts', async () => {
+    const user = userEvent.setup()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())
+    const { unmount } = render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    await waitFor(() => {
+      expect(camera.requestVideoOnlyStream).toHaveBeenCalled()
+    })
+    unmount()
+    expect(camera.stopMediaStream).toHaveBeenCalled()
+    expect(faceLandmarker.closeFaceLandmarker).toHaveBeenCalled()
   })
 })

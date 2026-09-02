@@ -50,6 +50,7 @@ export function Questionnaire({
   const changeCountRef = useRef(0)
   const questionStartedPerfRef = useRef(performance.now())
   const questionHeadingRef = useRef<HTMLParagraphElement | null>(null)
+  const submitLockRef = useRef(false)
 
   const items = bank?.items ?? []
   const current: QuestionItem | null =
@@ -150,6 +151,8 @@ export function Questionnaire({
   }
 
   const handleFinish = async () => {
+    if (submitLockRef.current) return
+    submitLockRef.current = true
     setBusy(true)
     setError(null)
     try {
@@ -161,12 +164,15 @@ export function Questionnaire({
     } catch (err) {
       setError(friendlyError(err))
     } finally {
+      submitLockRef.current = false
       setBusy(false)
     }
   }
 
   const handleNext = async () => {
     if (!current || selected === null || !bank) return
+    if (submitLockRef.current) return
+    submitLockRef.current = true
     setBusy(true)
     setError(null)
     const answeredAt = isoNow()
@@ -211,6 +217,7 @@ export function Questionnaire({
     } catch (err) {
       setError(friendlyError(err))
     } finally {
+      submitLockRef.current = false
       setBusy(false)
     }
   }

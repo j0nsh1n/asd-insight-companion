@@ -32,6 +32,7 @@ export function StimulusTaskPage({
   const [clipError, setClipError] = useState(false)
   const [transcript, setTranscript] = useState<string | null>(null)
   const tracking = useStimulusTracking(cameraAllowed, videoRef)
+  const startedLock = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +56,8 @@ export function StimulusTaskPage({
   }, [started])
 
   const startTask = () => {
+    if (startedLock.current) return
+    startedLock.current = true
     setStarted(true)
     void tracking.startCamera()
   }
@@ -91,7 +94,7 @@ export function StimulusTaskPage({
           label={task.video_description}
           videoRef={videoRef}
           onError={() => {
-            tracking.pauseLoop()
+            tracking.stopAndClear()
             setClipError(true)
           }}
           onPlay={() => tracking.startLoop()}

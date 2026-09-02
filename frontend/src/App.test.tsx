@@ -181,6 +181,7 @@ describe('App Phase 1 flow', () => {
         screen.getByRole('heading', { name: /^consent$/i }),
       ).toBeInTheDocument()
     })
+    expect(document.getElementById('main-content')).toHaveFocus()
     expect(
       screen.queryByRole('heading', { name: /^intake$/i }),
     ).not.toBeInTheDocument()

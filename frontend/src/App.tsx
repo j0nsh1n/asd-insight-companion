@@ -197,6 +197,18 @@ function App() {
 
   const prefs = session?.intake?.accessibility_prefs
   const shown = resolveView(session, view)
+  const lastFocusedView = useRef<AssessmentView | null>(null)
+
+  useEffect(() => {
+    if (lastFocusedView.current === null) {
+      lastFocusedView.current = shown
+      return
+    }
+    if (lastFocusedView.current === shown) return
+    lastFocusedView.current = shown
+    document.getElementById('main-content')?.focus()
+  }, [shown])
+
   const shellClasses = [
     'app-shell',
     prefs?.large_text ? 'a11y-large-text' : '',

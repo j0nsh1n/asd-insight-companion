@@ -11,6 +11,7 @@ import {
   stopMediaStream,
 } from './camera'
 import {
+  closeFaceLandmarker,
   detectFacesForVideo,
   getFaceLandmarker,
 } from './faceLandmarker'
@@ -91,12 +92,28 @@ export function useStimulusTracking(
     stopLoop()
     releaseCamera()
     clearBuffer()
+    closeFaceLandmarker()
     return lastSummaryRef.current
   }, [clearBuffer, releaseCamera, snapshotSummary, stopLoop])
 
   useEffect(() => {
     mountedRef.current = true
+    const haltOnPageHide = () => {
+      mountedRef.current = false
+      genRef.current += 1
+      playingRef.current = false
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = 0
+      }
+      stopMediaStream(streamRef.current)
+      streamRef.current = null
+      if (camRef.current) camRef.current.srcObject = null
+      closeFaceLandmarker()
+    }
+    window.addEventListener('pagehide', haltOnPageHide)
     return () => {
+      window.removeEventListener('pagehide', haltOnPageHide)
       mountedRef.current = false
       genRef.current += 1
       stopAndClear()
