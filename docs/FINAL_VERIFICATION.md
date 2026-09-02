@@ -20,12 +20,12 @@ Related automated commands: `docs/TESTING.md`. Demo walkthrough:
 | 5. No camera / camera in use | Retry or skip; no crash | MANUAL VERIFICATION REQUIRED | | | CameraCheck maps NotFound / NotReadable and offers continue without camera |
 | 6. No face / multiple faces / low light / unstable tracking | Text quality feedback; retry or skip; no unsupported estimates | MANUAL VERIFICATION REQUIRED | | | Quality gate disables Continue until pass |
 | 7. Calibration limited or skipped | Blink/head-motion not shown as valid | MANUAL VERIFICATION REQUIRED | | | Skip reports `limited`; Results can suppress estimates |
-| 8. Stimulus file missing or fails | Alert; skip still works; camera/tracking stop | MANUAL VERIFICATION REQUIRED | | | StimulusTaskPage missing-clip alert; skip posts zeros |
+| 8. Stimulus file missing or fails | Alert; skip still works; camera/tracking stop | MANUAL VERIFICATION REQUIRED | | | Automated: clip-error test stops the camera (`stopAndClear`). Missing-clip alert; skip posts zeros |
 | 9. Stimulus skipped | Partial, non-diagnostic result; no punitive copy | MANUAL VERIFICATION REQUIRED | | | Automated: results status `partial` when video skipped |
-| 10. Feature submission failure | Retry / Continue to summary / Return / Start over; no false success | MANUAL VERIFICATION REQUIRED | | | Automated: App test for failed POST stays on recovery |
+| 10. Feature submission failure | Retry / Continue to summary / Return / Start over; no false success | MANUAL VERIFICATION REQUIRED | | | Automated: App test for failed POST stays on recovery. Duration fields are rounded to integers so a played clip does not 422 |
 | 11. Results request failure | Retry; no other session’s summary | MANUAL VERIFICATION REQUIRED | | | ResultsPage clears summary on session id change; Retry button |
-| 12. Refresh / back | Cannot skip consent/questionnaire; camera stops; no raw media in storage | MANUAL VERIFICATION REQUIRED | | | Only session id in `sessionStorage`; no URL router |
-| 13. Keyboard-only core flow | Complete skip path without a mouse; visible focus; no trap | MANUAL VERIFICATION REQUIRED | | | Skip-to-main + `:focus-visible` exist; no Playwright |
+| 12. Refresh / back | Cannot skip consent/questionnaire; camera stops; no raw media in storage | MANUAL VERIFICATION REQUIRED | | | Automated: `pagehide` stops CameraCheck, Calibration, and stimulus streams. Only session id in `sessionStorage`; no URL router |
+| 13. Keyboard-only core flow | Complete skip path without a mouse; visible focus; no trap | MANUAL VERIFICATION REQUIRED | | | Automated: App focuses `#main-content` after a view change. Skip-to-main + `:focus-visible` exist; no Playwright |
 | 14. Narrow layout (360px) | Primary actions visible; no horizontal overflow on core screens | MANUAL VERIFICATION REQUIRED | | | Mobile CSS stacks actions; needs a human check |
 | 15. Privacy (DevTools Network) | Feature POST is JSON numbers only; `media_uploaded: false`; no video/audio/image/frame | MANUAL VERIFICATION REQUIRED | | | Automated: extra media keys 422; CI privacy grep |
 | 16. Production config | `/docs` `/redoc` `/openapi.json` 404 when `ENVIRONMENT=production`; 500 is `internal_error`; security headers present | MANUAL VERIFICATION REQUIRED | | | Automated: docs-hidden test; 500/HTTP tests; headers on `/health` |

@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pre-submission polish: the webcam and Face Landmarker stop when the
+  clip errors, the step unmounts, or the tab hides (`pagehide`) on the
+  stimulus, camera-check, and calibration screens. Double-click Start or
+  questionnaire Next cannot fire twice. Feature POST `duration_ms` values
+  are integers so a played clip does not 422. Watching the clip then Skip
+  keeps `task_completed`. A 409 `questionnaire_already_complete` is treated
+  as success. Keyboard focus moves to main after a view change.
 - README first-time setup (venv, `npm install`, MediaPipe vendor). Demo
   script says raw video is never uploaded. CI vs CodeQL triggers documented
   accurately.
