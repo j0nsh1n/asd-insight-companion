@@ -125,6 +125,35 @@ def test_results_video_skipped_is_partial(client: TestClient) -> None:
         assert term not in blob, term
 
 
+def test_results_watched_clip_without_samples_is_not_skipped(
+    client: TestClient,
+) -> None:
+    sid = _complete_questionnaire(client)
+    watched = _valid_payload(
+        sid,
+        sample_count=0,
+        tracking_ratio=0,
+        single_face_ratio=0,
+        dropped_frame_ratio=0,
+        valid_tracking_duration_ms=0,
+        task_completed=True,
+        data_quality="unavailable",
+        mean_abs_yaw_deg=0,
+        mean_abs_pitch_deg=0,
+        mean_blink_estimate=None,
+    )
+    assert client.post("/api/v1/assessment/features", json=watched).status_code == 200
+    response = client.get(f"/api/v1/results/{sid}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data_quality"]["video_task_status"] == "insufficient_tracking"
+    assert "skipped" not in body["explanation"]["summary"].lower()
+    assert "finished" in body["explanation"]["summary"].lower()
+    blob = _explanation_blob(body)
+    for term in PROHIBITED:
+        assert term not in blob, term
+
+
 def test_results_low_tracking_is_limited(client: TestClient) -> None:
     sid = _complete_questionnaire(client)
     low = _valid_payload(

@@ -96,6 +96,8 @@ describe('StimulusTaskPage', () => {
     )
     await user.click(screen.getByRole('button', { name: /skip video task/i }))
     expect(onSkip).toHaveBeenCalledTimes(1)
+    const skipped = onSkip.mock.calls[0][0] as { task_completed: boolean }
+    expect(skipped.task_completed).toBe(false)
   })
 
   it('Start video task loads the player and moves focus to it', async () => {

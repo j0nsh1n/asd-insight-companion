@@ -19,7 +19,7 @@ function videoWords(status: DataQualityBlock['video_task_status']): {
 } {
   if (status === 'completed') return { mark: 'OK', text: 'completed' }
   if (status === 'skipped') return { mark: 'Skip', text: 'skipped' }
-  return { mark: 'Limited', text: 'limited' }
+  return { mark: 'Limited', text: 'watched, tracking limited' }
 }
 
 function trackingWords(label: DataQualityBlock['overall_quality_label']): {

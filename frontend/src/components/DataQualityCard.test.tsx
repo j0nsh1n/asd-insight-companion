@@ -64,4 +64,20 @@ describe('DataQualityCard', () => {
 
     expect(screen.getByLabelText(/video task: skipped/i)).toBeInTheDocument()
   })
+
+  it('labels a watched clip with limited tracking without calling it skipped', () => {
+    const { container } = render(
+      <DataQualityCard
+        quality={baseQuality({
+          video_task_status: 'insufficient_tracking',
+          tracking_ratio: 0,
+          overall_quality_label: 'insufficient',
+        })}
+      />,
+    )
+    expect(
+      screen.getByLabelText(/video task: watched, tracking limited/i),
+    ).toBeInTheDocument()
+    expect(container.textContent?.toLowerCase()).not.toContain('skipped')
+  })
 })

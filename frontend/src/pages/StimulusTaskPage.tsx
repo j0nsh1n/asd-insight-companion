@@ -70,9 +70,17 @@ export function StimulusTaskPage({
     void tracking.startCamera()
   }
 
-  const leave = (next: (payload: FeaturePayload) => void) => {
+  const leave = (
+    next: (payload: FeaturePayload) => void,
+    taskCompleted?: boolean,
+  ) => {
     const summary = tracking.stopAndClear()
-    next(buildFeaturePayload(sessionId, task.task_version, summary))
+    const payload = buildFeaturePayload(sessionId, task.task_version, {
+      ...summary,
+      task_completed:
+        taskCompleted === undefined ? summary.task_completed : taskCompleted,
+    })
+    next(payload)
   }
 
   return (
@@ -177,7 +185,7 @@ export function StimulusTaskPage({
           <button
             type="button"
             className="btn"
-            onClick={() => leave(onSkip)}
+            onClick={() => leave(onSkip, false)}
           >
             Skip video task
           </button>
@@ -187,7 +195,7 @@ export function StimulusTaskPage({
             ref={continueRef}
             type="button"
             className="btn primary"
-            onClick={() => leave(onSkip)}
+            onClick={() => leave(onSkip, true)}
           >
             Continue
           </button>
