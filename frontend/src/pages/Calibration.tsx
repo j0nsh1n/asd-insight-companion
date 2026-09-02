@@ -72,7 +72,18 @@ export function Calibration({
 
   useEffect(() => {
     mountedRef.current = true
+    const onPageHide = () => {
+      mountedRef.current = false
+      requestGenRef.current += 1
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+      stopMediaStream(streamRef.current)
+      streamRef.current = null
+      if (videoRef.current) videoRef.current.srcObject = null
+    }
+    window.addEventListener('pagehide', onPageHide)
     return () => {
+      window.removeEventListener('pagehide', onPageHide)
       mountedRef.current = false
       requestGenRef.current += 1
       releaseCamera()
