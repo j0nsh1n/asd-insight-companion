@@ -26,6 +26,23 @@ affected flow.
 - Dependency upgrades unless required to fix a critical blocker
 - User accounts, history, or extra storage
 
+## Post-freeze amendments
+
+### Amendment 1 (2026-09-01)
+
+Permitted — stimulus replacement with a licensed silent stock clip
+(content, configuration, and rights documentation), and a visual restyle
+of the session screens (CSS-only).
+
+Justification — the stimulus replacement was planned before the freeze
+(the asset was committed as a placeholder explicitly "until replaced");
+the restyle is CSS-only and changes no behaviour, consent flow, skip
+paths, safety copy, or the privacy boundary.
+
+Scope limit — every other freeze rule still applies. This amendment does
+not permit new APIs, integrations, scoring, models, stimuli beyond this
+one replacement, dependency upgrades, or storage/account features.
+
 ## Demo day
 
 Do not merge during the final demo day unless the change fixes a critical
