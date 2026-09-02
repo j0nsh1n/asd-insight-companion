@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { friendlyError, isFeaturesAlreadyRecorded } from './friendlyError'
+import {
+  friendlyError,
+  isFeaturesAlreadyRecorded,
+  isQuestionnaireAlreadyComplete,
+} from './friendlyError'
 
 describe('friendlyError', () => {
   it('maps known API details to plain language', () => {
@@ -27,5 +31,16 @@ describe('friendlyError', () => {
     expect(
       isFeaturesAlreadyRecorded(new Error('features_already_recorded')),
     ).toBe(true)
+  })
+
+  it('recognizes an already-complete questionnaire', () => {
+    expect(
+      isQuestionnaireAlreadyComplete(
+        new Error('questionnaire_already_complete'),
+      ),
+    ).toBe(true)
+    expect(
+      isQuestionnaireAlreadyComplete(new Error('features_already_recorded')),
+    ).toBe(false)
   })
 })

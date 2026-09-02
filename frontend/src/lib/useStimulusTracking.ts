@@ -41,6 +41,7 @@ export function useStimulusTracking(
   const tickFailuresRef = useRef(0)
   const taskCompletedRef = useRef(false)
   const lastSummaryRef = useRef<TrackingSessionSummary>(emptyTrackingSummary())
+  const hasSnapshottedRef = useRef(false)
 
   const [cameraOn, setCameraOn] = useState(false)
   const [camError, setCamError] = useState<string | null>(null)
@@ -61,7 +62,7 @@ export function useStimulusTracking(
 
   const durationMs = () => {
     if (playOriginMsRef.current == null) return 0
-    return Math.max(0, performance.now() - playOriginMsRef.current)
+    return Math.max(0, Math.round(performance.now() - playOriginMsRef.current))
   }
 
   const snapshotSummary = useCallback((): TrackingSessionSummary => {
@@ -72,6 +73,7 @@ export function useStimulusTracking(
     })
     lastSummaryRef.current = summary
     framesRef.current = []
+    hasSnapshottedRef.current = true
     return summary
   }, [])
 
@@ -86,7 +88,7 @@ export function useStimulusTracking(
 
   const stopAndClear = useCallback((): TrackingSessionSummary => {
     genRef.current += 1
-    if (framesRef.current.length > 0) {
+    if (!hasSnapshottedRef.current) {
       snapshotSummary()
     }
     stopLoop()

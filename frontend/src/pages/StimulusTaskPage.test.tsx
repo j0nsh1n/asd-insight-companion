@@ -340,6 +340,27 @@ describe('StimulusTaskPage', () => {
     expect(faceLandmarker.closeFaceLandmarker).toHaveBeenCalled()
   })
 
+  it('keeps task_completed when the clip ends with no tracking samples', async () => {
+    const user = userEvent.setup()
+    const onSkip = vi.fn()
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={false}
+        onBack={vi.fn()}
+        onSkip={onSkip}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    const clip = document.querySelector('video.stimulus-video') as HTMLVideoElement
+    fireEvent.play(clip)
+    fireEvent.ended(clip)
+    await user.click(screen.getByRole('button', { name: /skip video task/i }))
+    expect(onSkip).toHaveBeenCalledTimes(1)
+    const payload = onSkip.mock.calls[0][0] as { task_completed: boolean }
+    expect(payload.task_completed).toBe(true)
+  })
+
   it('closes the landmarker when the stimulus step unmounts', async () => {
     const user = userEvent.setup()
     vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())

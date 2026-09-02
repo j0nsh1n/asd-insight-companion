@@ -12,7 +12,10 @@ import {
   postQuestionResponse,
   postQuestionnaireComplete,
 } from '../lib/api'
-import { friendlyError } from '../lib/friendlyError'
+import {
+  friendlyError,
+  isQuestionnaireAlreadyComplete,
+} from '../lib/friendlyError'
 
 type QuestionnaireProps = {
   sessionId: string
@@ -150,6 +153,14 @@ export function Questionnaire({
     setSelected(value)
   }
 
+  const applyAlreadyComplete = async () => {
+    const progress = await fetchQuestionnaireProgress(sessionId)
+    setSession(progress.session)
+    onSessionUpdate(progress.session)
+    setReadyToFinish(false)
+    setLiveMessage('Questionnaire complete.')
+  }
+
   const handleFinish = async () => {
     if (submitLockRef.current) return
     submitLockRef.current = true
@@ -162,7 +173,15 @@ export function Questionnaire({
       setReadyToFinish(false)
       setLiveMessage('Questionnaire complete.')
     } catch (err) {
-      setError(friendlyError(err))
+      if (isQuestionnaireAlreadyComplete(err)) {
+        try {
+          await applyAlreadyComplete()
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       submitLockRef.current = false
       setBusy(false)
@@ -215,7 +234,15 @@ export function Questionnaire({
         setIndex((i) => i + 1)
       }
     } catch (err) {
-      setError(friendlyError(err))
+      if (isQuestionnaireAlreadyComplete(err)) {
+        try {
+          await applyAlreadyComplete()
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       submitLockRef.current = false
       setBusy(false)
