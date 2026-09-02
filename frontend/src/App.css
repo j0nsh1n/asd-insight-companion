@@ -591,23 +591,27 @@ textarea:focus-visible,
   background: #000;
 }
 
-.stimulus-cam-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  overflow: hidden;
+.stimulus-track-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0 0 1rem;
 }
 
 .stimulus-cam-thumb {
-  width: 7rem;
-  height: 5.25rem;
+  flex: 0 0 auto;
+  width: 8rem;
+  height: 6rem;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--border);
-  margin: 0 0 0.75rem;
   transform: scaleX(-1);
+  background: #080c10;
+}
+
+.stimulus-track-hud {
+  margin: 0;
+  font-size: 0.85rem;
 }
 
 .stimulus-instruction {

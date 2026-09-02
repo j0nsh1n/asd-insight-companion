@@ -45,6 +45,8 @@ export function useStimulusTracking(
 
   const [cameraOn, setCameraOn] = useState(false)
   const [camError, setCamError] = useState<string | null>(null)
+  const [hud, setHud] = useState({ samples: 0, faces: 0, running: false })
+  const hudAtRef = useRef(0)
 
   const stopLoop = useCallback(() => {
     playingRef.current = false
@@ -122,48 +124,9 @@ export function useStimulusTracking(
     }
   }, [stopAndClear])
 
-  const startCamera = useCallback(async () => {
-    if (!cameraAllowed) return
-    const gen = ++genRef.current
-    setCamError(null)
-    try {
-      const stream = await requestVideoOnlyStream()
-      if (!mountedRef.current || gen !== genRef.current) {
-        stopMediaStream(stream)
-        return
-      }
-      assertVideoOnly(stream)
-      streamRef.current = stream
-      const el = camRef.current
-      if (el) {
-        el.srcObject = stream
-        await el.play().catch(() => {})
-      }
-      if (!mountedRef.current || gen !== genRef.current) {
-        stopMediaStream(stream)
-        streamRef.current = null
-        return
-      }
-      setCameraOn(true)
-      void getFaceLandmarker().catch(() => {
-        if (mountedRef.current && gen === genRef.current) {
-          setCamError('Face landmarker unavailable. You can still watch or skip.')
-        }
-      })
-    } catch (err) {
-      if (!mountedRef.current || gen !== genRef.current) return
-      if (err instanceof CameraError) setCamError(err.message)
-      else setCamError('Camera unavailable. You can still watch or skip.')
-    }
-  }, [cameraAllowed])
-
-  const startLoop = useCallback(() => {
-    if (!cameraAllowed || !streamRef.current) return
-    playingRef.current = true
-    if (playOriginMsRef.current == null) {
-      playOriginMsRef.current = performance.now()
-    }
+  const pumpLoop = useCallback(() => {
     if (rafRef.current) return
+    if (!playingRef.current || !streamRef.current) return
 
     const tick = async () => {
       if (!mountedRef.current || !playingRef.current || !streamRef.current) {
@@ -191,6 +154,15 @@ export function useStimulusTracking(
           if (!stored) {
             tickFailuresRef.current += 1
           }
+          const now = performance.now()
+          if (now - hudAtRef.current > 200) {
+            hudAtRef.current = now
+            setHud({
+              samples: framesRef.current.length,
+              faces: result.faceLandmarks?.length ?? 0,
+              running: true,
+            })
+          }
         } catch {
           tickFailuresRef.current += 1
         }
@@ -204,7 +176,54 @@ export function useStimulusTracking(
       }
     }
     rafRef.current = requestAnimationFrame(() => void tick())
-  }, [cameraAllowed, clipVideoRef])
+  }, [clipVideoRef])
+
+  const startCamera = useCallback(async () => {
+    if (!cameraAllowed) return
+    const gen = ++genRef.current
+    setCamError(null)
+    void getFaceLandmarker().catch(() => {
+      if (mountedRef.current && gen === genRef.current) {
+        setCamError(
+          'Face landmarker unavailable. You can still watch; tracking notes will be limited.',
+        )
+      }
+    })
+    try {
+      const stream = await requestVideoOnlyStream()
+      if (!mountedRef.current || gen !== genRef.current) {
+        stopMediaStream(stream)
+        return
+      }
+      assertVideoOnly(stream)
+      streamRef.current = stream
+      const el = camRef.current
+      if (el) {
+        el.srcObject = stream
+        await el.play().catch(() => {})
+      }
+      if (!mountedRef.current || gen !== genRef.current) {
+        stopMediaStream(stream)
+        streamRef.current = null
+        return
+      }
+      setCameraOn(true)
+      pumpLoop()
+    } catch (err) {
+      if (!mountedRef.current || gen !== genRef.current) return
+      if (err instanceof CameraError) setCamError(err.message)
+      else setCamError('Camera unavailable. You can still watch or skip.')
+    }
+  }, [cameraAllowed, pumpLoop])
+
+  const startLoop = useCallback(() => {
+    if (!cameraAllowed) return
+    playingRef.current = true
+    if (playOriginMsRef.current == null) {
+      playOriginMsRef.current = performance.now()
+    }
+    pumpLoop()
+  }, [cameraAllowed, pumpLoop])
 
   const pauseLoop = useCallback(() => {
     stopLoop()
@@ -218,6 +237,7 @@ export function useStimulusTracking(
     camRef,
     cameraOn,
     camError,
+    hud,
     startCamera,
     startLoop,
     pauseLoop,

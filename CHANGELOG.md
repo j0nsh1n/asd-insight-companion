@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stimulus tracking actually runs for the demo: GPU Face Landmarker with CPU
+  fallback, the webcam preview is large enough to decode, and the loop
+  starts after the camera is ready even if the clip already played. Results
+  still show on-device blink/head-motion estimates if calibration was limited.
 - Results treat `task_completed` as whether the clip was watched. A finished
   clip with no tracking samples is not labeled skipped.
 - Back returns to the previous session step instead of Welcome, except from

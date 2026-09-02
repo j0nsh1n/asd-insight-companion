@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { StimulusPlayer } from '../components/StimulusPlayer'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
 import {
@@ -51,10 +51,12 @@ export function StimulusTaskPage({
     }
   }, [task.transcript_file])
 
-  useEffect(() => {
-    if (started && !clipEnded) {
-      videoRef.current?.focus()
-    }
+  useLayoutEffect(() => {
+    if (!started || clipEnded) return
+    const clip = videoRef.current
+    if (!clip) return
+    clip.focus()
+    void clip.play().catch(() => {})
   }, [started, clipEnded])
 
   useEffect(() => {
@@ -127,15 +129,26 @@ export function StimulusTaskPage({
         </div>
       )}
 
-      {cameraAllowed && (
-        <video
-          ref={tracking.camRef}
-          className="stimulus-cam-hidden"
-          playsInline
-          muted
-          autoPlay
-          aria-hidden="true"
-        />
+      {cameraAllowed && started && (
+        <div className="stimulus-track-row">
+          <video
+            ref={tracking.camRef}
+            className="stimulus-cam-thumb"
+            playsInline
+            muted
+            autoPlay
+            aria-label="On-device webcam preview. Frames stay in this tab."
+          />
+          <p className="muted stimulus-track-hud" role="status">
+            On-device Face Landmarker
+            {tracking.hud.running
+              ? `: ${tracking.hud.faces} face${tracking.hud.faces === 1 ? '' : 's'} · ${tracking.hud.samples} samples`
+              : tracking.cameraOn
+                ? ': camera on, waiting for the clip to play'
+                : ': starting camera…'}
+            . Frames are not uploaded.
+          </p>
+        </div>
       )}
 
       {tracking.camError && (

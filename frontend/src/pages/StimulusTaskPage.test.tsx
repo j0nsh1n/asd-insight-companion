@@ -380,6 +380,51 @@ describe('StimulusTaskPage', () => {
     expect(payload.task_completed).toBe(true)
   })
 
+  it('runs on-device detection after the camera attaches even if play started first', async () => {
+    const user = userEvent.setup()
+    let resolveStream!: (s: MediaStream) => void
+    vi.mocked(camera.requestVideoOnlyStream).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStream = resolve
+      }),
+    )
+    vi.mocked(faceLandmarker.getFaceLandmarker).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof faceLandmarker.getFaceLandmarker>>,
+    )
+    vi.mocked(faceLandmarker.detectFacesForVideo).mockReturnValue({
+      faceLandmarks: [[{ x: 0.5, y: 0.5, z: 0, visibility: 1 }]],
+      faceBlendshapes: [],
+      facialTransformationMatrixes: [],
+    })
+
+    render(
+      <StimulusTaskPage
+        sessionId="sess-1"
+        cameraAllowed={true}
+        onBack={vi.fn()}
+        onSkip={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /start video task/i }))
+    const clip = document.querySelector(
+      'video.stimulus-video',
+    ) as HTMLVideoElement
+    fireEvent.play(clip)
+    const cam = document.querySelector(
+      'video.stimulus-cam-thumb',
+    ) as HTMLVideoElement
+    expect(cam).toBeTruthy()
+    Object.defineProperty(cam, 'readyState', { configurable: true, get: () => 4 })
+    expect(faceLandmarker.detectFacesForVideo).not.toHaveBeenCalled()
+    resolveStream(makeStream())
+    await waitFor(() => {
+      expect(faceLandmarker.detectFacesForVideo).toHaveBeenCalled()
+    })
+    expect(
+      screen.getByText(/on-device face landmarker/i),
+    ).toBeInTheDocument()
+  })
+
   it('closes the landmarker when the stimulus step unmounts', async () => {
     const user = userEvent.setup()
     vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(makeStream())
