@@ -14,7 +14,11 @@ export type AssessmentView =
   | 'feature_error'
   | 'results'
 
-const LATE_VIEWS: readonly AssessmentView[] = [
+const VIEW_ORDER: readonly AssessmentView[] = [
+  'welcome',
+  'consent',
+  'intake',
+  'questionnaire',
   'camera',
   'calibration',
   'stimulus',
@@ -46,48 +50,61 @@ export function viewFromServerStage(stage: SessionStage): AssessmentView {
   return 'welcome'
 }
 
+function furthestUnlockedView(session: SessionResponse): AssessmentView {
+  switch (session.stage) {
+    case 'created':
+      return 'consent'
+    case 'consented':
+      return 'intake'
+    case 'intake_complete':
+    case 'questionnaire_in_progress':
+      return 'questionnaire'
+    case 'questionnaire_complete':
+      return 'results'
+    default:
+      return 'welcome'
+  }
+}
+
 /**
- * Map a requested view onto the earliest stage allowed by the stored session.
- * Client-only steps (camera through results) require questionnaire_complete.
+ * Honor Back to any already-unlocked step. Clamp anything ahead of the
+ * session stage so consent/intake/questionnaire cannot be skipped.
  */
 export function resolveView(
   session: SessionResponse | null,
   requested: AssessmentView,
 ): AssessmentView {
   if (!session) return 'welcome'
-
-  if (session.stage === 'created') {
-    return requested === 'welcome' ? 'welcome' : 'consent'
+  const capIdx = VIEW_ORDER.indexOf(furthestUnlockedView(session))
+  const reqIdx = VIEW_ORDER.indexOf(requested)
+  if (reqIdx === -1 || reqIdx > capIdx) {
+    return viewFromServerStage(session.stage)
   }
+  return requested
+}
 
-  if (session.stage === 'consented') {
-    if (requested === 'welcome' || requested === 'consent') return requested
-    return 'intake'
+/** One step earlier in the session. Welcome has no previous step. */
+export function previousView(current: AssessmentView): AssessmentView {
+  switch (current) {
+    case 'consent':
+      return 'welcome'
+    case 'intake':
+      return 'consent'
+    case 'questionnaire':
+      return 'intake'
+    case 'camera':
+      return 'questionnaire'
+    case 'calibration':
+      return 'camera'
+    case 'stimulus':
+    case 'submitting_features':
+    case 'feature_error':
+      return 'calibration'
+    case 'results':
+      return 'stimulus'
+    default:
+      return 'welcome'
   }
-
-  if (
-    session.stage === 'intake_complete' ||
-    session.stage === 'questionnaire_in_progress'
-  ) {
-    if (requested === 'welcome') return 'welcome'
-    return 'questionnaire'
-  }
-
-  if (session.stage !== 'questionnaire_complete') {
-    return 'welcome'
-  }
-
-  if (requested === 'welcome') return 'welcome'
-
-  if (session.features_recorded) {
-    if (requested === 'feature_error') return 'feature_error'
-    return 'results'
-  }
-
-  if ((LATE_VIEWS as readonly string[]).includes(requested)) {
-    return requested
-  }
-  return 'camera'
 }
 
 export function canRequestResults(session: SessionResponse | null): boolean {

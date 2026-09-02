@@ -277,7 +277,7 @@ describe('App Phase 1 flow', () => {
     )
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /^intake$/i }),
+        screen.getByRole('heading', { name: /intake/i }),
       ).toBeInTheDocument()
     })
     const shell = container.querySelector('.app-shell')
@@ -427,6 +427,29 @@ describe('App Phase 1 flow', () => {
     expect(
       screen.queryByRole('heading', { name: /research-session summary/i }),
     ).not.toBeInTheDocument()
+  })
+
+  it('goes back one step from the camera check, not to welcome', async () => {
+    const user = userEvent.setup()
+    sessionStore.saveSessionId('11111111-2222-3333-4444-555555555555')
+    mocked.getSession.mockResolvedValue(baseSession('questionnaire_complete'))
+
+    render(<App />)
+    await user.click(
+      screen.getByRole('button', { name: /resume saved session/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /camera quality check/i }),
+      ).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole('button', { name: /^back$/i }))
+    expect(
+      screen.queryByRole('heading', { name: /^welcome$/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /questionnaire/i }),
+    ).toBeInTheDocument()
   })
 
   it('resumes a recorded session to results, not the camera step', async () => {

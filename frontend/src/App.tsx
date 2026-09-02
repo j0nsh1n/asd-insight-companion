@@ -15,10 +15,16 @@ import {
   type AssessmentView,
   VIEW_ANNOUNCEMENTS,
   canRequestResults,
+  previousView,
   resolveView,
   viewFromServerStage,
 } from './lib/assessmentFlow'
-import { friendlyError, isFeaturesAlreadyRecorded } from './lib/friendlyError'
+import {
+  friendlyError,
+  isConsentAlreadyRecorded,
+  isFeaturesAlreadyRecorded,
+  isIntakeAlreadyRecorded,
+} from './lib/friendlyError'
 import {
   applyTheme,
   resolveInitialTheme,
@@ -94,11 +100,6 @@ function App() {
     setError(null)
   }, [])
 
-  const showWelcome = useCallback(() => {
-    setView('welcome')
-    setError(null)
-  }, [])
-
   const startOver = useCallback(() => {
     clearSessionId()
     setSession(null)
@@ -157,7 +158,16 @@ function App() {
       const next = await postConsent(session.id, values)
       applySession(next)
     } catch (err) {
-      setError(friendlyError(err))
+      if (isConsentAlreadyRecorded(err)) {
+        try {
+          const next = await getSession(session.id)
+          applySession(next)
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -200,7 +210,16 @@ function App() {
       const next = await postIntake(session.id, payload)
       applySession(next)
     } catch (err) {
-      setError(friendlyError(err))
+      if (isIntakeAlreadyRecorded(err)) {
+        try {
+          const next = await getSession(session.id)
+          applySession(next)
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -292,8 +311,10 @@ function App() {
           <Consent
             busy={busy}
             error={error}
+            alreadyRecorded={Boolean(session.consent.consented_at)}
             onSubmit={(v) => void handleConsent(v)}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('consent'))}
+            onContinue={() => setView('intake')}
           />
         )}
 
@@ -301,9 +322,10 @@ function App() {
           <Intake
             busy={busy}
             error={error}
-            readOnlySummary={null}
+            readOnlySummary={session.intake}
             onSubmit={(p) => void handleIntake(p)}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('intake'))}
+            onContinue={() => setView('questionnaire')}
           />
         )}
 
@@ -312,14 +334,15 @@ function App() {
             sessionId={session.id}
             initialSession={session}
             onSessionUpdate={applySession}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('questionnaire'))}
+            onContinue={() => setView('camera')}
           />
         )}
 
         {shown === 'camera' && session && (
           <CameraCheck
             cameraAllowed={session.consent.camera_optional === true}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('camera'))}
             onComplete={() => {
               setView('calibration')
               setError(null)
@@ -330,7 +353,7 @@ function App() {
         {shown === 'calibration' && (
           <Calibration
             cameraAllowed={session?.consent.camera_optional === true}
-            onBack={() => setView('camera')}
+            onBack={() => setView(previousView('calibration'))}
             onComplete={(outcome) => {
               setCalibrationOutcome(outcome)
               setView('stimulus')
@@ -343,7 +366,7 @@ function App() {
           <StimulusTaskPage
             sessionId={session.id}
             cameraAllowed={session.consent.camera_optional === true}
-            onBack={() => setView('calibration')}
+            onBack={() => setView(previousView('stimulus'))}
             onSkip={(payload) => {
               void handleFeatures(payload)
             }}
@@ -414,7 +437,7 @@ function App() {
             sessionId={session.id}
             loadError={error}
             suppressEstimates={calibrationOutcome === 'limited'}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('results'))}
           />
         )}
       </main>

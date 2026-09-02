@@ -20,6 +20,14 @@ export function isQuestionnaireAlreadyComplete(err: unknown): boolean {
   return messageOf(err) === 'questionnaire_already_complete'
 }
 
+export function isConsentAlreadyRecorded(err: unknown): boolean {
+  return messageOf(err) === 'consent_already_recorded'
+}
+
+export function isIntakeAlreadyRecorded(err: unknown): boolean {
+  return messageOf(err) === 'intake_already_recorded'
+}
+
 export function friendlyError(err: unknown): string {
   if (err && typeof err === 'object' && 'name' in err) {
     const name = String((err as { name: string }).name)

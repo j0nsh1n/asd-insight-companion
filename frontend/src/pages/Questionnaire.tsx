@@ -22,6 +22,7 @@ type QuestionnaireProps = {
   initialSession: SessionResponse
   onSessionUpdate: (session: SessionResponse) => void
   onBack: () => void
+  onContinue?: () => void
 }
 
 function isoNow(): string {
@@ -33,6 +34,7 @@ export function Questionnaire({
   initialSession,
   onSessionUpdate,
   onBack,
+  onContinue,
 }: QuestionnaireProps) {
   const [bank, setBank] = useState<QuestionBank | null>(null)
   const [session, setSession] = useState(initialSession)
@@ -274,8 +276,13 @@ export function Questionnaire({
         </p>
         <div className="button-row">
           <button type="button" className="btn" onClick={onBack}>
-            Back to welcome
+            Back
           </button>
+          {onContinue && (
+            <button type="button" className="btn primary" onClick={onContinue}>
+              Continue
+            </button>
+          )}
         </div>
       </section>
     )

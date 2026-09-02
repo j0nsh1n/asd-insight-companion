@@ -356,7 +356,7 @@ export function CameraCheck({
 
       <div className="button-row">
         <button type="button" className="btn" onClick={handleCancel}>
-          Cancel
+          Back
         </button>
         {cameraAllowed && status.kind !== 'preview' && (
           <button

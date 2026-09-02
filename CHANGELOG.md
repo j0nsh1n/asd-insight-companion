@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Back returns to the previous session step instead of Welcome, except from
+  Consent (the first step after Welcome).
 - After the attention clip ends, Skip is hidden and Continue advances the
   session. A Dark mode / Light mode toggle in the header persists in
   `localStorage` (appearance only; not research data).

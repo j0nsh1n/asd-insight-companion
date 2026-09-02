@@ -47,4 +47,36 @@ describe('Intake', () => {
       'aria-invalid',
     )
   })
+
+  it('shows Back and Continue on a saved intake instead of jumping home', async () => {
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    const onContinue = vi.fn()
+    render(
+      <Intake
+        busy={false}
+        error={null}
+        readOnlySummary={{
+          age_range: '25-34',
+          language: 'en',
+          accessibility_prefs: {
+            large_text: false,
+            reduced_motion: false,
+            screen_reader_hints: false,
+          },
+          optional_context: null,
+        }}
+        onSubmit={vi.fn()}
+        onBack={onBack}
+        onContinue={onContinue}
+      />,
+    )
+    expect(
+      screen.getByRole('heading', { name: /intake complete/i }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^back$/i }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: /^continue$/i }))
+    expect(onContinue).toHaveBeenCalledTimes(1)
+  })
 })

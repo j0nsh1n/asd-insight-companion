@@ -48,7 +48,7 @@ Start with `./scripts/dev.sh`.
 | Missing video file | Start task when `.mp4` is absent | Alert that the clip is missing; skip still works; camera/tracking stop |
 | Feature endpoint failure | Stop the backend before Skip | Recovery: Retry / Continue to summary / Return / Start over. Do not show a successful save. Played-clip POSTs use integer `duration_ms` |
 | Results endpoint failure | Break `GET /results` after a successful save | Retry on the results page; safety notice still visible |
-| Refresh / back | Refresh after questionnaire; after features; close the tab during camera or clip | Cannot bypass consent; recorded features resume to results, not a second write; webcam stops on `pagehide` |
+| Refresh / back | Refresh after questionnaire; after features; close the tab during camera or clip | Cannot bypass consent; recorded features resume to results, not a second write; webcam stops on `pagehide`. In-session Back goes to the previous step, not Welcome |
 | Keyboard only | Tab through a full skip path | Visible focus; no trap; Enter/Space on buttons |
 | Narrow viewport | 360px wide | Primary actions stay visible; no horizontal overflow |
 | Network tab | Skip or complete the video task | No image/video/audio/frame payloads; `media_uploaded: false` |

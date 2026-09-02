@@ -10,11 +10,20 @@ export type ConsentFormValues = {
 type ConsentProps = {
   busy: boolean
   error: string | null
+  alreadyRecorded?: boolean
   onSubmit: (values: ConsentFormValues) => void
   onBack: () => void
+  onContinue?: () => void
 }
 
-export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
+export function Consent({
+  busy,
+  error,
+  alreadyRecorded = false,
+  onSubmit,
+  onBack,
+  onContinue,
+}: ConsentProps) {
   const [researchOnly, setResearchOnly] = useState(false)
   const [noDiagnosis, setNoDiagnosis] = useState(false)
   const [dataMinimization, setDataMinimization] = useState(false)
@@ -23,6 +32,30 @@ export function Consent({ busy, error, onSubmit, onBack }: ConsentProps) {
 
   const requiredAccepted = researchOnly && noDiagnosis && dataMinimization
   const requiredInvalid = Boolean(localError)
+
+  if (alreadyRecorded) {
+    return (
+      <section className="panel" aria-labelledby="consent-title">
+        <h2 id="consent-title">Consent</h2>
+        <p className="status-ok">
+          Consent for this research session was already recorded.
+        </p>
+        <p className="muted">
+          You can continue to intake or go back one step.
+        </p>
+        <div className="button-row">
+          <button type="button" className="btn" onClick={onBack}>
+            Back
+          </button>
+          {onContinue && (
+            <button type="button" className="btn primary" onClick={onContinue}>
+              Continue
+            </button>
+          )}
+        </div>
+      </section>
+    )
+  }
 
   const setRequired = (checked: boolean) => {
     setResearchOnly(checked)

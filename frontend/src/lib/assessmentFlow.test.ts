@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { SessionResponse, SessionStage } from './api'
-import { resolveView, viewFromServerStage } from './assessmentFlow'
+import {
+  previousView,
+  resolveView,
+  viewFromServerStage,
+} from './assessmentFlow'
 
 const session = (
   stage: SessionStage,
@@ -39,6 +43,15 @@ describe('resolveView', () => {
     expect(resolveView(mid, 'welcome')).toBe('welcome')
   })
 
+  it('allows Back to an earlier unlocked step', () => {
+    const mid = session('questionnaire_in_progress')
+    expect(resolveView(mid, 'intake')).toBe('intake')
+    expect(resolveView(mid, 'consent')).toBe('consent')
+    const done = session('questionnaire_complete')
+    expect(resolveView(done, 'questionnaire')).toBe('questionnaire')
+    expect(resolveView(done, 'camera')).toBe('camera')
+  })
+
   it('allows optional camera/stimulus after questionnaire complete', () => {
     const done = session('questionnaire_complete')
     expect(resolveView(done, 'camera')).toBe('camera')
@@ -46,12 +59,23 @@ describe('resolveView', () => {
     expect(viewFromServerStage('questionnaire_complete')).toBe('camera')
   })
 
-  it('resumes recorded features to results, not a second camera pass', () => {
+  it('still opens results after features are recorded, and allows Back', () => {
     const recorded = session('questionnaire_complete', {
       features_recorded: true,
     })
-    expect(resolveView(recorded, 'camera')).toBe('results')
+    expect(resolveView(recorded, 'results')).toBe('results')
+    expect(resolveView(recorded, 'stimulus')).toBe('stimulus')
     expect(resolveView(recorded, 'welcome')).toBe('welcome')
+  })
+
+  it('maps each session step to the previous one', () => {
+    expect(previousView('consent')).toBe('welcome')
+    expect(previousView('intake')).toBe('consent')
+    expect(previousView('questionnaire')).toBe('intake')
+    expect(previousView('camera')).toBe('questionnaire')
+    expect(previousView('calibration')).toBe('camera')
+    expect(previousView('stimulus')).toBe('calibration')
+    expect(previousView('results')).toBe('stimulus')
   })
 
   it('does not resolve results without a session', () => {

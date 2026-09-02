@@ -98,7 +98,7 @@ describe('CameraCheck', () => {
     ).toBeInTheDocument()
   })
 
-  it('stops stream on cancel', async () => {
+  it('stops stream on Back', async () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
     const stream = makeStream()
@@ -111,7 +111,7 @@ describe('CameraCheck', () => {
         screen.getByRole('heading', { name: /quality gate/i }),
       ).toBeInTheDocument()
     })
-    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    await user.click(screen.getByRole('button', { name: /^back$/i }))
     expect(camera.stopMediaStream).toHaveBeenCalled()
     expect(onBack).toHaveBeenCalled()
   })
