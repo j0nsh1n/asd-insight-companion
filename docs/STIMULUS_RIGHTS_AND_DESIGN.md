@@ -1,12 +1,12 @@
 # Stimulus rights and design (template)
 
-Fill this in before any real-participant deployment. The placeholder clip
-and transcript in `frontend/public/stimuli/` are **not** study-ready.
+The clip below is a licensed stock asset selected for technical demonstration.
+Re-check this file before any real-participant deployment.
 
 ## Intent
 
-- source_type: licensed stock clip, locally hosted (placeholder until the
-  final clip is selected and trimmed)
+- source_type: licensed stock clip, locally hosted (Pexels, selected
+  2026-08-31)
 - intent: research-only, not diagnostic. This stimulus is a generic
   technical-demo asset, not a clinical instrument, and produces no
   diagnostic output.
@@ -16,37 +16,41 @@ and transcript in `frontend/public/stimuli/` are **not** study-ready.
 | Field | Value |
 |---|---|
 | `task_version` | social-interaction-v1 |
-| Title | Two-Person Object Organization |
-| Duration target | ~45 seconds |
+| Title | Neutral Two-Person Conversation |
+| Duration target | ~10 seconds (full clip length) |
 | Video path | `/stimuli/social-interaction-v1.mp4` |
 | Captions | none — the clip is silent and has no caption track |
 | Transcript | `/stimuli/social-interaction-v1.transcript.md` |
 
-## Rights (fill in before any real-participant deployment)
+## Rights
 
 | Field | Value |
 |---|---|
 | Platform / source | Pexels |
-| Exact source page URL | |
-| Creator name | |
-| Download date | |
-| Original downloaded filename | |
+| Exact source page URL | https://www.pexels.com/video/two-people-talking-6585548/ |
+| Creator name | Artem Podrez |
+| Download date | 2026-08-31 |
+| Original downloaded filename | `6585548-uhd_3840_2160_30fps.mp4` |
 | Local file path | `frontend/public/stimuli/social-interaction-v1.mp4` |
-| License reviewed (yes/no) | |
-| Clip trimmed (yes/no) | |
-| Trimmed duration | |
+| License reviewed (yes/no) | yes — Pexels License; source page marked "Free to use" |
+| Clip trimmed (yes/no) | no — full length kept; re-encoded 3840x2160 to 1280x720 and audio stripped |
+| Trimmed duration | 10.4 s (unchanged from source) |
 
 Explicit confirmations:
 
-- [ ] No audio or dialogue is used; the clip is silent
-- [ ] Clip contains adults only; no minors
-- [ ] No visible brands, logos, or identifying documents
-- [ ] No endorsement is implied by the people depicted
-- [ ] Clip is a generic licensed demo stimulus, NOT a validated
+- [x] No audio or dialogue is used; the clip is silent
+      (source has no audio stream; encoded with `-an`)
+- [x] Clip contains adults only; no minors
+      (checked across sampled frames spanning the full clip)
+- [x] No visible brands, logos, or identifying documents
+- [x] No endorsement is implied by the people depicted
+      (disclaimer recorded in `shared/stimuli_manifest.json`)
+- [x] Clip is a generic licensed demo stimulus, NOT a validated
       autism-assessment stimulus
-- [ ] No real participant video is used anywhere in the demo
-- [ ] Transcript reviewed against the final trimmed clip
+- [x] No real participant video is used anywhere in the demo
+- [x] Transcript reviewed against the final encoded clip
 - [ ] Pause, restart, skip, and keyboard controls tested
+      (MANUAL — see docs/FINAL_VERIFICATION.md row 17)
 
 ## Design constraints (do not weaken)
 
@@ -61,7 +65,9 @@ Explicit confirmations:
 
 ## Replacement checklist
 
-1. Drop the final licensed `.mp4` at `frontend/public/stimuli/social-interaction-v1.mp4`
-2. Replace the transcript with final text that matches the trimmed picture
-3. Update `shared/stimuli_manifest.json` if the title, duration, or paths change
-4. Re-read this file and tick the rights boxes and confirmations
+If the clip is ever replaced:
+
+1. Drop the new licensed `.mp4` at `frontend/public/stimuli/social-interaction-v1.mp4`
+2. Replace the transcript with text that matches the new picture
+3. Update `shared/stimuli_manifest.json` (title, duration, description, rights)
+4. Re-read this file and redo the rights table and confirmations

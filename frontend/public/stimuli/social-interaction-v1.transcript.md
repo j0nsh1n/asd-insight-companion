@@ -1,18 +1,25 @@
 # Descriptive Transcript — Neutral Two-Person Conversation
 
-0:00–0:08
-Two adults are seated at a table in a neutral setting.
+Silent clip, about 10 seconds, one continuous static wide shot. There is no
+dialogue and no caption track.
 
-0:08–0:20
-One person gestures toward objects on the table. The other person watches
-and responds with a gesture.
+0:00–0:03
+Two adults sit facing each other in armchairs at a small round table in a
+quiet wood-panelled interior. The person on the left wears a hat, glasses,
+and a dark jacket. The person on the right wears a light sweater and holds
+an open notebook on their lap.
 
-0:20–0:35
-Both people look between one another and the objects while interacting.
+0:03–0:07
+The person on the left speaks and gestures with both hands near the table.
+The person on the right looks toward them, then down at the notebook, then
+back up.
 
-0:35–0:45
-The interaction ends in a neutral manner.
+0:07–0:10
+The exchange continues at the same relaxed pace. Both people remain seated
+and turned toward one another as the clip ends.
 
-Replace this transcript after selecting and trimming the final licensed clip.
-It must describe visible action accurately.
-This clip is silent. There is no dialogue and no caption track.
+The camera does not move and there are no cuts. Nothing in the scene directs
+the viewer where to look.
+
+Replace this transcript if the clip is changed. It must describe visible
+action accurately.
