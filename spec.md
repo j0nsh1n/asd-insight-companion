@@ -153,8 +153,9 @@ HTTP (all under `/api/v1`):
   `MANUAL VERIFICATION REQUIRED` until a human runs them. Do not invent
   Pass.
 - Post-Phase-8 freeze (`docs/RELEASE_FREEZE.md`) plus Amendment 1
-  (licensed silent stock clip + CSS restyle). No new scoring, risk,
-  probability, or media-upload APIs.
+  (licensed silent stock clip + CSS restyle) and Amendment 2 (the
+  appearance-only dark/light toggle). No new scoring, risk, probability,
+  or media-upload APIs.
 
 ## Acceptance Criteria
 

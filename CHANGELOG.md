@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   session-screen restyle are permitted post-freeze. Every other freeze rule
   still applies.
 
+- Release freeze amended again (2026-09-03, see docs/RELEASE_FREEZE.md):
+  Amendment 2 records the Dark mode / Light mode toggle, which went past
+  Amendment 1's CSS-only wording. Appearance only; no research data.
+
 ### Added
 
 - MIT license for application source (`LICENSE`).
