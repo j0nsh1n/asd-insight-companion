@@ -85,6 +85,21 @@ def test_results_legacy_payload_without_data_quality_is_skipped(
     assert "score" not in json.dumps(body).lower()
 
 
+def test_results_unparseable_payload_is_skipped(client: TestClient) -> None:
+    sid = _complete_questionnaire(client)
+    from app.db import get_connection
+
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE sessions SET feature_payload = ? WHERE id = ?",
+            ("{not valid json", sid),
+        )
+    response = client.get(f"/api/v1/results/{sid}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data_quality"]["video_task_status"] == "skipped"
+
+
 def test_results_no_features_row_is_partial_skip(client: TestClient) -> None:
     sid = _complete_questionnaire(client)
     response = client.get(f"/api/v1/results/{sid}")

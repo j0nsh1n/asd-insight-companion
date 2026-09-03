@@ -43,6 +43,23 @@ Scope limit — every other freeze rule still applies. This amendment does
 not permit new APIs, integrations, scoring, models, stimuli beyond this
 one replacement, dependency upgrades, or storage/account features.
 
+### Amendment 2 (2026-09-03)
+
+Permitted — retroactive: the Dark mode / Light mode toggle in the session
+header (`frontend/src/lib/theme.ts`, its `localStorage` preference, and the
+header control), shipped in PR #21.
+
+Justification — Amendment 1 permitted a CSS-only restyle, and this toggle
+went past that wording: it added a small module and a user-visible control.
+It is appearance only. It changes no behaviour in the consent flow, skip
+paths, safety copy, questionnaire, camera handling, or the privacy
+boundary; the chosen theme stays in the browser and is never sent to the
+API or stored as research data.
+
+Scope limit — every other freeze rule still applies. This amendment covers
+the existing toggle only. It does not permit further UI features, new APIs,
+scoring, stimuli, dependency upgrades, or storage/account features.
+
 ## Demo day
 
 Do not merge during the final demo day unless the change fixes a critical
