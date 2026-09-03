@@ -116,7 +116,7 @@ export function ResultsPage({
 
       <div className="button-row">
         <button type="button" className="btn" onClick={onBack}>
-          Back to welcome
+          Back
         </button>
       </div>
     </section>

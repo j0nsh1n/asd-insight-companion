@@ -91,12 +91,17 @@ export function pushTrackingSample(
   return true
 }
 
+function asNonNegInt(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.max(0, Math.round(n))
+}
+
 export function emptyTrackingSummary(
   durationMs = 0,
 ): TrackingSessionSummary {
   return {
     sample_count: 0,
-    duration_ms: durationMs,
+    duration_ms: asNonNegInt(durationMs),
     tracking_ratio: 0,
     single_face_ratio: 0,
     dropped_frame_ratio: 0,
@@ -185,8 +190,9 @@ export function summarizeTrackingFrames(
   const n = frames.length
   const attempts = Math.max(0, opts.tickAttempts ?? n)
   const failures = Math.max(0, opts.tickFailures ?? 0)
+  const duration = asNonNegInt(durationMs)
   if (n === 0) {
-    const empty = emptyTrackingSummary(durationMs)
+    const empty = emptyTrackingSummary(duration)
     const dropped = attempts > 0 ? failures / attempts : 0
     return {
       ...empty,
@@ -220,12 +226,12 @@ export function summarizeTrackingFrames(
       blinkN += 1
     }
   }
-  const validMs = Math.min(validTrackingDurationMs(frames), durationMs)
+  const validMs = Math.min(validTrackingDurationMs(frames), duration)
   const trackingRatio = ok / n
   const dropped = attempts > 0 ? Math.min(1, failures / attempts) : 0
   return {
     sample_count: n,
-    duration_ms: durationMs,
+    duration_ms: duration,
     tracking_ratio: trackingRatio,
     single_face_ratio: single / n,
     dropped_frame_ratio: dropped,
@@ -252,12 +258,15 @@ export function buildFeaturePayload(
   return {
     session_id: sessionId,
     task_version: taskVersion,
-    sample_count: summary.sample_count,
-    duration_ms: summary.duration_ms,
+    sample_count: asNonNegInt(summary.sample_count),
+    duration_ms: asNonNegInt(summary.duration_ms),
     tracking_ratio: summary.tracking_ratio,
     single_face_ratio: summary.single_face_ratio,
     dropped_frame_ratio: summary.dropped_frame_ratio,
-    valid_tracking_duration_ms: summary.valid_tracking_duration_ms,
+    valid_tracking_duration_ms: Math.min(
+      asNonNegInt(summary.valid_tracking_duration_ms),
+      asNonNegInt(summary.duration_ms),
+    ),
     task_completed: summary.task_completed,
     data_quality: summary.data_quality,
     mean_abs_yaw_deg: summary.mean_abs_yaw_deg,

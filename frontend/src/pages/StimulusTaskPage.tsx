@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { StimulusPlayer } from '../components/StimulusPlayer'
 import { getStimulusTaskManifest } from '../lib/stimuliManifest'
 import {
@@ -30,8 +30,11 @@ export function StimulusTaskPage({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [started, setStarted] = useState(false)
   const [clipError, setClipError] = useState(false)
+  const [clipEnded, setClipEnded] = useState(false)
   const [transcript, setTranscript] = useState<string | null>(null)
   const tracking = useStimulusTracking(cameraAllowed, videoRef)
+  const startedLock = useRef(false)
+  const continueRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -48,20 +51,38 @@ export function StimulusTaskPage({
     }
   }, [task.transcript_file])
 
+  useLayoutEffect(() => {
+    if (!started || clipEnded) return
+    const clip = videoRef.current
+    if (!clip) return
+    clip.focus()
+    void clip.play().catch(() => {})
+  }, [started, clipEnded])
+
   useEffect(() => {
-    if (started) {
-      videoRef.current?.focus()
+    if (clipEnded) {
+      continueRef.current?.focus()
     }
-  }, [started])
+  }, [clipEnded])
 
   const startTask = () => {
+    if (startedLock.current) return
+    startedLock.current = true
     setStarted(true)
     void tracking.startCamera()
   }
 
-  const leave = (next: (payload: FeaturePayload) => void) => {
+  const leave = (
+    next: (payload: FeaturePayload) => void,
+    taskCompleted?: boolean,
+  ) => {
     const summary = tracking.stopAndClear()
-    next(buildFeaturePayload(sessionId, task.task_version, summary))
+    const payload = buildFeaturePayload(sessionId, task.task_version, {
+      ...summary,
+      task_completed:
+        taskCompleted === undefined ? summary.task_completed : taskCompleted,
+    })
+    next(payload)
   }
 
   return (
@@ -91,7 +112,7 @@ export function StimulusTaskPage({
           label={task.video_description}
           videoRef={videoRef}
           onError={() => {
-            tracking.pauseLoop()
+            tracking.stopAndClear()
             setClipError(true)
           }}
           onPlay={() => tracking.startLoop()}
@@ -99,6 +120,7 @@ export function StimulusTaskPage({
           onEnded={() => {
             tracking.markTaskCompleted()
             tracking.stopAndClear()
+            setClipEnded(true)
           }}
         />
       ) : (
@@ -107,15 +129,26 @@ export function StimulusTaskPage({
         </div>
       )}
 
-      {cameraAllowed && (
-        <video
-          ref={tracking.camRef}
-          className="stimulus-cam-hidden"
-          playsInline
-          muted
-          autoPlay
-          aria-hidden="true"
-        />
+      {cameraAllowed && started && (
+        <div className="stimulus-track-row">
+          <video
+            ref={tracking.camRef}
+            className="stimulus-cam-thumb"
+            playsInline
+            muted
+            autoPlay
+            aria-label="On-device webcam preview. Frames stay in this tab."
+          />
+          <p className="muted stimulus-track-hud" role="status">
+            On-device Face Landmarker
+            {tracking.hud.running
+              ? `: ${tracking.hud.faces} face${tracking.hud.faces === 1 ? '' : 's'} · ${tracking.hud.samples} samples`
+              : tracking.cameraOn
+                ? ': camera on, waiting for the clip to play'
+                : ': starting camera…'}
+            . Frames are not uploaded.
+          </p>
+        </div>
       )}
 
       {tracking.camError && (
@@ -127,6 +160,13 @@ export function StimulusTaskPage({
       {clipError && (
         <p className="status-error" role="alert">
           The video clip isn't available in this build. You can skip this step.
+        </p>
+      )}
+
+      {clipEnded && !clipError && (
+        <p className="status-ok" role="status">
+          The video finished. Continue to save this step. Camera sampling has
+          stopped in this browser.
         </p>
       )}
 
@@ -154,13 +194,25 @@ export function StimulusTaskPage({
             Start video task
           </button>
         )}
-        <button
-          type="button"
-          className="btn"
-          onClick={() => leave(onSkip)}
-        >
-          Skip video task
-        </button>
+        {(!started || clipError) && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => leave(onSkip, false)}
+          >
+            Skip video task
+          </button>
+        )}
+        {clipEnded && !clipError && (
+          <button
+            ref={continueRef}
+            type="button"
+            className="btn primary"
+            onClick={() => leave(onSkip, true)}
+          >
+            Continue
+          </button>
+        )}
       </div>
     </section>
   )

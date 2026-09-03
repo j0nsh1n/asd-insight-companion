@@ -90,4 +90,19 @@ describe('Calibration', () => {
     expect(preview).toBeTruthy()
     expect((preview as HTMLVideoElement).srcObject).toBe(stream)
   })
+
+  it('stops the stream on pagehide during center/hold', async () => {
+    const user = userEvent.setup()
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+
+    render(<Calibration onBack={vi.fn()} onComplete={vi.fn()} />)
+    await user.click(screen.getByRole('button', { name: /start with camera/i }))
+    await waitFor(() => {
+      expect(screen.getByText(/step 1 — center/i)).toBeInTheDocument()
+    })
+    vi.mocked(camera.stopMediaStream).mockClear()
+    window.dispatchEvent(new Event('pagehide'))
+    expect(camera.stopMediaStream).toHaveBeenCalledWith(stream)
+  })
 })

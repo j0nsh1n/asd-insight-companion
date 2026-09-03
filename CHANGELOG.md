@@ -38,6 +38,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stimulus tracking actually runs for the demo: GPU Face Landmarker with CPU
+  fallback, the webcam preview is large enough to decode, and the loop
+  starts after the camera is ready even if the clip already played. Results
+  still show on-device blink/head-motion estimates if calibration was limited.
+- Results treat `task_completed` as whether the clip was watched. A finished
+  clip with no tracking samples is not labeled skipped.
+- Back returns to the previous session step instead of Welcome, except from
+  Consent (the first step after Welcome).
+- After the attention clip ends, Skip is hidden and Continue advances the
+  session. A Dark mode / Light mode toggle in the header persists in
+  `localStorage` (appearance only; not research data).
+- Pre-submission polish: the webcam and Face Landmarker stop when the
+  clip errors, the step unmounts, or the tab hides (`pagehide`) on the
+  stimulus, camera-check, and calibration screens. Double-click Start or
+  questionnaire Next cannot fire twice. Feature POST `duration_ms` values
+  are integers so a played clip does not 422. Watching the clip then Skip
+  keeps `task_completed`. A 409 `questionnaire_already_complete` is treated
+  as success. Keyboard focus moves to main after a view change.
 - README first-time setup (venv, `npm install`, MediaPipe vendor). Demo
   script says raw video is never uploaded. CI vs CodeQL triggers documented
   accurately.

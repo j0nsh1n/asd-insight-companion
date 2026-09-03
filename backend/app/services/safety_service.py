@@ -59,8 +59,12 @@ def build_safe_explanation(
             "The video task was skipped, so no video-task observations are shown."
         )
     else:
-        limited.append("Video-task tracking was insufficient")
-        lines.append("Camera-based tracking was limited during this session.")
+        available.append("Video task was watched")
+        limited.append("Camera-based tracking was limited or unavailable")
+        lines.append(
+            "The video task finished. Camera-based tracking was limited or "
+            "unavailable, so blink and head-motion estimates are not shown."
+        )
 
     if video is None or not video.attention_estimates_available:
         limited.append("Blink and head-motion estimates were not available")

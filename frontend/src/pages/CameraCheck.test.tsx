@@ -98,7 +98,7 @@ describe('CameraCheck', () => {
     ).toBeInTheDocument()
   })
 
-  it('stops stream on cancel', async () => {
+  it('stops stream on Back', async () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
     const stream = makeStream()
@@ -111,7 +111,7 @@ describe('CameraCheck', () => {
         screen.getByRole('heading', { name: /quality gate/i }),
       ).toBeInTheDocument()
     })
-    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    await user.click(screen.getByRole('button', { name: /^back$/i }))
     expect(camera.stopMediaStream).toHaveBeenCalled()
     expect(onBack).toHaveBeenCalled()
   })
@@ -156,5 +156,22 @@ describe('CameraCheck', () => {
     await waitFor(() => {
       expect(camera.stopMediaStream).toHaveBeenCalledWith(lateStream)
     })
+  })
+
+  it('stops the stream on pagehide while preview is live', async () => {
+    const user = userEvent.setup()
+    const stream = makeStream()
+    vi.mocked(camera.requestVideoOnlyStream).mockResolvedValue(stream)
+
+    render(<CameraCheck onBack={vi.fn()} onComplete={vi.fn()} />)
+    await user.click(screen.getByRole('button', { name: /enable camera/i }))
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: /quality gate/i }),
+      ).toBeInTheDocument()
+    })
+    vi.mocked(camera.stopMediaStream).mockClear()
+    window.dispatchEvent(new Event('pagehide'))
+    expect(camera.stopMediaStream).toHaveBeenCalledWith(stream)
   })
 })

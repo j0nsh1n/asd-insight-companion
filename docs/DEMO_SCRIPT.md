@@ -40,8 +40,9 @@ Point at the on-screen placeholder banner.
 Either: enable camera, show the quality checklist (text, not color only),
 then a short calibration **or** skip both and say that is allowed.
 
-Then Start or Skip the clip. If the `.mp4` is missing, the skip-able alert
-is the honest demo.
+Then Start the clip. Skip is available before Start and if the clip fails.
+After the clip ends, Continue saves the numeric notes and moves on. If the
+`.mp4` is missing, the skip-able alert is the honest demo.
 
 Say: “For this prototype, we use a licensed, silent stock interaction clip
 to demonstrate the local visual-task pipeline. It is not a validated autism

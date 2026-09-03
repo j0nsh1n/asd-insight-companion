@@ -12,13 +12,17 @@ import {
   postQuestionResponse,
   postQuestionnaireComplete,
 } from '../lib/api'
-import { friendlyError } from '../lib/friendlyError'
+import {
+  friendlyError,
+  isQuestionnaireAlreadyComplete,
+} from '../lib/friendlyError'
 
 type QuestionnaireProps = {
   sessionId: string
   initialSession: SessionResponse
   onSessionUpdate: (session: SessionResponse) => void
   onBack: () => void
+  onContinue?: () => void
 }
 
 function isoNow(): string {
@@ -30,6 +34,7 @@ export function Questionnaire({
   initialSession,
   onSessionUpdate,
   onBack,
+  onContinue,
 }: QuestionnaireProps) {
   const [bank, setBank] = useState<QuestionBank | null>(null)
   const [session, setSession] = useState(initialSession)
@@ -50,6 +55,7 @@ export function Questionnaire({
   const changeCountRef = useRef(0)
   const questionStartedPerfRef = useRef(performance.now())
   const questionHeadingRef = useRef<HTMLParagraphElement | null>(null)
+  const submitLockRef = useRef(false)
 
   const items = bank?.items ?? []
   const current: QuestionItem | null =
@@ -149,7 +155,17 @@ export function Questionnaire({
     setSelected(value)
   }
 
+  const applyAlreadyComplete = async () => {
+    const progress = await fetchQuestionnaireProgress(sessionId)
+    setSession(progress.session)
+    onSessionUpdate(progress.session)
+    setReadyToFinish(false)
+    setLiveMessage('Questionnaire complete.')
+  }
+
   const handleFinish = async () => {
+    if (submitLockRef.current) return
+    submitLockRef.current = true
     setBusy(true)
     setError(null)
     try {
@@ -159,14 +175,25 @@ export function Questionnaire({
       setReadyToFinish(false)
       setLiveMessage('Questionnaire complete.')
     } catch (err) {
-      setError(friendlyError(err))
+      if (isQuestionnaireAlreadyComplete(err)) {
+        try {
+          await applyAlreadyComplete()
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
+      submitLockRef.current = false
       setBusy(false)
     }
   }
 
   const handleNext = async () => {
     if (!current || selected === null || !bank) return
+    if (submitLockRef.current) return
+    submitLockRef.current = true
     setBusy(true)
     setError(null)
     const answeredAt = isoNow()
@@ -209,8 +236,17 @@ export function Questionnaire({
         setIndex((i) => i + 1)
       }
     } catch (err) {
-      setError(friendlyError(err))
+      if (isQuestionnaireAlreadyComplete(err)) {
+        try {
+          await applyAlreadyComplete()
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
+      submitLockRef.current = false
       setBusy(false)
     }
   }
@@ -240,8 +276,13 @@ export function Questionnaire({
         </p>
         <div className="button-row">
           <button type="button" className="btn" onClick={onBack}>
-            Back to welcome
+            Back
           </button>
+          {onContinue && (
+            <button type="button" className="btn primary" onClick={onContinue}>
+              Continue
+            </button>
+          )}
         </div>
       </section>
     )

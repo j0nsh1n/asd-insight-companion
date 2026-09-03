@@ -78,5 +78,5 @@ works) and via PR review. One phase may span several small PRs.
 ## Backlog (unscheduled)
 - Licensed AQ-10 (Adult) if written permission is obtained
 - Session withdraw, TTL, and encrypted-at-rest storage
-- Replace the gitignored placeholder attention clip with an approved recording
+- Licensed silent stock attention clip (Pexels 6585548) documented; local `.mp4` remains gitignored
 - Playwright coverage for the documented manual matrix

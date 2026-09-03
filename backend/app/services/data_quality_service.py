@@ -34,9 +34,7 @@ def video_task_status(
     features: FeaturePayload | None,
     stored_quality: str | None = None,
 ) -> VideoTaskStatus:
-    if features is None:
-        return "skipped"
-    if features.sample_count == 0 or not features.task_completed:
+    if features is None or not features.task_completed:
         return "skipped"
     quality = effective_feature_quality(features, stored_quality)
     if quality in INSUFFICIENT_FEATURE_QUALITY:

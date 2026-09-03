@@ -16,6 +16,7 @@ type IntakeProps = {
   readOnlySummary: IntakePayload | null
   onSubmit: (payload: IntakePayload) => void
   onBack: () => void
+  onContinue?: () => void
 }
 
 export function Intake({
@@ -24,6 +25,7 @@ export function Intake({
   readOnlySummary,
   onSubmit,
   onBack,
+  onContinue,
 }: IntakeProps) {
   const [ageRange, setAgeRange] = useState<string>(AGE_RANGES[0])
   const [language, setLanguage] = useState('en')
@@ -60,6 +62,16 @@ export function Intake({
           When you continue, the next step is a timed self-report questionnaire
           used for research prescreening only.
         </p>
+        <div className="button-row">
+          <button type="button" className="btn" onClick={onBack}>
+            Back
+          </button>
+          {onContinue && (
+            <button type="button" className="btn primary" onClick={onContinue}>
+              Continue
+            </button>
+          )}
+        </div>
       </section>
     )
   }

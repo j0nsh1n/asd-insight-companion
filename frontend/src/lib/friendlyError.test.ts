@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { friendlyError, isFeaturesAlreadyRecorded } from './friendlyError'
+import {
+  friendlyError,
+  isConsentAlreadyRecorded,
+  isFeaturesAlreadyRecorded,
+  isIntakeAlreadyRecorded,
+  isQuestionnaireAlreadyComplete,
+} from './friendlyError'
 
 describe('friendlyError', () => {
   it('maps known API details to plain language', () => {
@@ -27,5 +33,25 @@ describe('friendlyError', () => {
     expect(
       isFeaturesAlreadyRecorded(new Error('features_already_recorded')),
     ).toBe(true)
+  })
+
+  it('recognizes duplicate consent and intake writes', () => {
+    expect(
+      isConsentAlreadyRecorded(new Error('consent_already_recorded')),
+    ).toBe(true)
+    expect(
+      isIntakeAlreadyRecorded(new Error('intake_already_recorded')),
+    ).toBe(true)
+  })
+
+  it('recognizes an already-complete questionnaire', () => {
+    expect(
+      isQuestionnaireAlreadyComplete(
+        new Error('questionnaire_already_complete'),
+      ),
+    ).toBe(true)
+    expect(
+      isQuestionnaireAlreadyComplete(new Error('features_already_recorded')),
+    ).toBe(false)
   })
 })

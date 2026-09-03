@@ -15,10 +15,22 @@ import {
   type AssessmentView,
   VIEW_ANNOUNCEMENTS,
   canRequestResults,
+  previousView,
   resolveView,
   viewFromServerStage,
 } from './lib/assessmentFlow'
-import { friendlyError, isFeaturesAlreadyRecorded } from './lib/friendlyError'
+import {
+  friendlyError,
+  isConsentAlreadyRecorded,
+  isFeaturesAlreadyRecorded,
+  isIntakeAlreadyRecorded,
+} from './lib/friendlyError'
+import {
+  applyTheme,
+  resolveInitialTheme,
+  toggleTheme,
+  type ColorTheme,
+} from './lib/theme'
 import {
   clearSessionId,
   loadSessionId,
@@ -51,6 +63,11 @@ function App() {
   const [calibrationOutcome, setCalibrationOutcome] =
     useState<CalibrationOutcome>('limited')
   const submitLock = useRef(false)
+  const [theme, setTheme] = useState<ColorTheme>(() => resolveInitialTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
 
   useEffect(() => {
     let cancelled = false
@@ -80,11 +97,6 @@ function App() {
       return viewFromServerStage(next.stage)
     })
     setHasStoredId(stored)
-    setError(null)
-  }, [])
-
-  const showWelcome = useCallback(() => {
-    setView('welcome')
     setError(null)
   }, [])
 
@@ -146,7 +158,16 @@ function App() {
       const next = await postConsent(session.id, values)
       applySession(next)
     } catch (err) {
-      setError(friendlyError(err))
+      if (isConsentAlreadyRecorded(err)) {
+        try {
+          const next = await getSession(session.id)
+          applySession(next)
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -189,7 +210,16 @@ function App() {
       const next = await postIntake(session.id, payload)
       applySession(next)
     } catch (err) {
-      setError(friendlyError(err))
+      if (isIntakeAlreadyRecorded(err)) {
+        try {
+          const next = await getSession(session.id)
+          applySession(next)
+        } catch (inner) {
+          setError(friendlyError(inner))
+        }
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -197,6 +227,18 @@ function App() {
 
   const prefs = session?.intake?.accessibility_prefs
   const shown = resolveView(session, view)
+  const lastFocusedView = useRef<AssessmentView | null>(null)
+
+  useEffect(() => {
+    if (lastFocusedView.current === null) {
+      lastFocusedView.current = shown
+      return
+    }
+    if (lastFocusedView.current === shown) return
+    lastFocusedView.current = shown
+    document.getElementById('main-content')?.focus()
+  }, [shown])
+
   const shellClasses = [
     'app-shell',
     prefs?.large_text ? 'a11y-large-text' : '',
@@ -226,17 +268,30 @@ function App() {
             errors are announced when they change.
           </p>
         )}
-        <header>
-          <h1>ASD Insight Companion</h1>
-          <p className="tagline">
-            Research-only ASD-trait prescreen prototype
-          </p>
-          {session && (
-            <p className="muted session-meta">
-              Session {session.id.slice(0, 8)}… · stage: {session.stage} · API{' '}
-              {API_BASE_URL}
+        <header className="app-header">
+          <div>
+            <h1>ASD Insight Companion</h1>
+            <p className="tagline">
+              Research-only ASD-trait prescreen prototype
             </p>
-          )}
+            {session && (
+              <p className="muted session-meta">
+                Session {session.id.slice(0, 8)}… · stage: {session.stage} · API{' '}
+                {API_BASE_URL}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn theme-toggle"
+            aria-pressed={theme === 'dark'}
+            aria-label={
+              theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            }
+            onClick={() => setTheme((current) => toggleTheme(current))}
+          >
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
         </header>
         <div className="sr-only" role="status" aria-live="polite">
           Current step: {VIEW_ANNOUNCEMENTS[shown]}
@@ -256,8 +311,10 @@ function App() {
           <Consent
             busy={busy}
             error={error}
+            alreadyRecorded={Boolean(session.consent.consented_at)}
             onSubmit={(v) => void handleConsent(v)}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('consent'))}
+            onContinue={() => setView('intake')}
           />
         )}
 
@@ -265,9 +322,10 @@ function App() {
           <Intake
             busy={busy}
             error={error}
-            readOnlySummary={null}
+            readOnlySummary={session.intake}
             onSubmit={(p) => void handleIntake(p)}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('intake'))}
+            onContinue={() => setView('questionnaire')}
           />
         )}
 
@@ -276,14 +334,15 @@ function App() {
             sessionId={session.id}
             initialSession={session}
             onSessionUpdate={applySession}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('questionnaire'))}
+            onContinue={() => setView('camera')}
           />
         )}
 
         {shown === 'camera' && session && (
           <CameraCheck
             cameraAllowed={session.consent.camera_optional === true}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('camera'))}
             onComplete={() => {
               setView('calibration')
               setError(null)
@@ -294,7 +353,7 @@ function App() {
         {shown === 'calibration' && (
           <Calibration
             cameraAllowed={session?.consent.camera_optional === true}
-            onBack={() => setView('camera')}
+            onBack={() => setView(previousView('calibration'))}
             onComplete={(outcome) => {
               setCalibrationOutcome(outcome)
               setView('stimulus')
@@ -307,7 +366,7 @@ function App() {
           <StimulusTaskPage
             sessionId={session.id}
             cameraAllowed={session.consent.camera_optional === true}
-            onBack={() => setView('calibration')}
+            onBack={() => setView(previousView('stimulus'))}
             onSkip={(payload) => {
               void handleFeatures(payload)
             }}
@@ -378,7 +437,7 @@ function App() {
             sessionId={session.id}
             loadError={error}
             suppressEstimates={calibrationOutcome === 'limited'}
-            onBack={showWelcome}
+            onBack={() => setView(previousView('results'))}
           />
         )}
       </main>

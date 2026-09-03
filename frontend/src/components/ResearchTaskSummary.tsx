@@ -11,8 +11,7 @@ export function ResearchTaskSummary({
 }: ResearchTaskSummaryProps) {
   const q = observations.questionnaire_response_pattern
   const v = observations.video_task_summary
-  const showEstimates =
-    Boolean(v?.attention_estimates_available) && !suppressEstimates
+  const showEstimates = Boolean(v?.attention_estimates_available)
   return (
     <section className="result-card" aria-labelledby="obs-title">
       <h3 id="obs-title">Research-task measurements</h3>
@@ -76,10 +75,17 @@ export function ResearchTaskSummary({
             </dt>
             <dd>{v.valid_tracking_duration_ms} ms</dd>
           </div>
-          {suppressEstimates && (
+          {suppressEstimates && showEstimates && (
             <p className="muted">
-              Calibration was limited or skipped, so blink and head-motion
-              estimates are not shown as valid.
+              Calibration was limited or skipped. Blink and head-motion
+              numbers below are still on-device estimates from the clip, not
+              clinical measures.
+            </p>
+          )}
+          {suppressEstimates && !showEstimates && (
+            <p className="muted">
+              Calibration was limited or skipped, and no usable blink or
+              head-motion estimates were stored.
             </p>
           )}
           {showEstimates && v.mean_blink_estimate != null && (

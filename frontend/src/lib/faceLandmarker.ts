@@ -16,21 +16,31 @@ export const MODEL_URL = '/mediapipe/face_landmarker.task'
 
 let landmarkerPromise: Promise<FaceLandmarker> | null = null
 
-/** Create or reuse a VIDEO-mode Face Landmarker (numFaces up to 3). */
+async function createLandmarker(
+  delegate: 'GPU' | 'CPU',
+): Promise<FaceLandmarker> {
+  const vision = await FilesetResolver.forVisionTasks(WASM_ROOT)
+  return FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: MODEL_URL,
+      delegate,
+    },
+    runningMode: 'VIDEO',
+    numFaces: 3,
+    outputFaceBlendshapes: true,
+    outputFacialTransformationMatrixes: true,
+  })
+}
+
+/** Create or reuse a VIDEO-mode Face Landmarker. GPU first, CPU fallback. */
 export async function getFaceLandmarker(): Promise<FaceLandmarker> {
   if (!landmarkerPromise) {
     landmarkerPromise = (async () => {
-      const vision = await FilesetResolver.forVisionTasks(WASM_ROOT)
-      return FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: MODEL_URL,
-          delegate: 'GPU',
-        },
-        runningMode: 'VIDEO',
-        numFaces: 3,
-        outputFaceBlendshapes: true,
-        outputFacialTransformationMatrixes: true,
-      })
+      try {
+        return await createLandmarker('GPU')
+      } catch {
+        return await createLandmarker('CPU')
+      }
     })().catch((err) => {
       landmarkerPromise = null
       throw err

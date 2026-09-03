@@ -104,6 +104,52 @@ describe('stimulusTracking', () => {
     expect('frames' in payload).toBe(false)
   })
 
+  it('rounds duration fields so the feature POST stays JSON integers', () => {
+    const frames: TrackingFrame[] = [
+      {
+        timestamp: 0,
+        tracking_ok: true,
+        one_face: true,
+        head_pose: { yawDeg: 1, pitchDeg: 1, rollDeg: 0 },
+        blink_estimate: 0.1,
+      },
+      {
+        timestamp: 500,
+        tracking_ok: true,
+        one_face: true,
+        head_pose: { yawDeg: 1, pitchDeg: 1, rollDeg: 0 },
+        blink_estimate: 0.1,
+      },
+    ]
+    const summary = summarizeTrackingFrames(frames, 1847.6, {
+      taskCompleted: true,
+    })
+    expect(Number.isInteger(summary.duration_ms)).toBe(true)
+    expect(Number.isInteger(summary.valid_tracking_duration_ms)).toBe(true)
+    expect(summary.duration_ms).toBe(1848)
+    expect(summary.valid_tracking_duration_ms).toBeLessThanOrEqual(
+      summary.duration_ms,
+    )
+    const payload = buildFeaturePayload('sid-1', 'social-interaction-v1', {
+      ...summary,
+      duration_ms: 1847.6,
+      valid_tracking_duration_ms: 1847.6,
+    })
+    expect(payload.duration_ms).toBe(1848)
+    expect(Number.isInteger(payload.duration_ms)).toBe(true)
+    expect(Number.isInteger(payload.valid_tracking_duration_ms)).toBe(true)
+    expect(payload.valid_tracking_duration_ms).toBeLessThanOrEqual(
+      payload.duration_ms,
+    )
+  })
+
+  it('keeps task_completed on an empty buffer snapshot', () => {
+    const summary = summarizeTrackingFrames([], 12.4, { taskCompleted: true })
+    expect(summary.task_completed).toBe(true)
+    expect(summary.duration_ms).toBe(12)
+    expect(summary.sample_count).toBe(0)
+  })
+
   it('returns an empty summary with media_uploaded false', () => {
     const summary = emptyTrackingSummary(0)
     expect(summary.sample_count).toBe(0)
