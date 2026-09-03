@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- MIT license for application source (`LICENSE`).
+- Filled `spec.md` from the current codebase (behavior, stack pins, privacy,
+  gates).
+- Judge-facing README section for Hack for Humanity.
+
 - Final verification matrix, judge demo script, and release freeze
   (Phase 8). No new product features.
 - Release hardening (Phase 7): skip-to-main link, required-field labels,

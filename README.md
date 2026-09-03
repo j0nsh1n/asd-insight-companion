@@ -2,6 +2,66 @@
 
 Research-only, non-diagnostic ASD-trait prescreen prototype for adults 18+.
 
+## For judges and voters (Hack for Humanity — Summer 2026)
+
+ASD Insight Companion is an anonymous, research-only session prototype
+for adults 18+. It demonstrates how a webcam-based behavioral-research
+session can be built so raw video never leaves the participant's browser —
+and so the product can never overclaim, even by accident.
+
+### What it is / is not
+
+| Is | Is not |
+|---|---|
+| Research-only ASD-trait prescreen session prototype | Autism diagnosis, risk, or probability |
+| Fail-closed consent (3 required statements; camera optional) | A required camera or a required video |
+| On-device MediaPipe face tracking in the browser tab | Raw video, audio, frame, or landmark upload |
+| JSON numeric features only (`media_uploaded: false`) | A clinical instrument |
+| Results reported as complete / partial / insufficient | A score, likelihood, or medical advice |
+
+Skip is never treated as failure. The camera can be declined and the session
+still completes — honestly, as a partial result.
+
+### Architecture in one sentence
+
+Browser (React 19 + MediaPipe Face Landmarker, fully on-device) → FastAPI +
+Pydantic (`extra=forbid`, so media fields are rejected outright) → SQLite
+anonymous session with numeric JSON → research-session summary.
+
+### Proof points
+
+- **Privacy you can watch:** finish the camera task with DevTools → Network
+  open — the only payload is JSON numbers and `media_uploaded` is false.
+  A CI privacy grep fails the build on raw-media upload paths.
+- **Accessibility as engineering:** WCAG non-text-contrast-verified palette,
+  keyboard-operable controls, text-not-color quality checklists, a
+  descriptive transcript matched to the actual (silent, licensed) footage,
+  reduced-motion support.
+- **Process:** gated pull requests, a written release freeze with dated
+  amendments, and a licensed stimulus with a documented rights record —
+  see [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
+- **Tests:** vitest + pytest in CI, including a test that the stimulus step
+  never requests microphone audio.
+
+### Run it locally
+
+```bash
+./scripts/dev.sh
+```
+
+Frontend [http://127.0.0.1:5173](http://127.0.0.1:5173) (localhost is the
+secure context the camera needs) · Backend
+[http://127.0.0.1:8000](http://127.0.0.1:8000). First time only: `npm install`
+in `frontend/` vendors the MediaPipe WASM. The stimulus clip is gitignored —
+place a licensed copy at `frontend/public/stimuli/social-interaction-v1.mp4`
+or the video step shows its honest skip-able notice.
+
+### Submission materials
+
+- Demo walkthrough: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
+- Verification matrix: [docs/FINAL_VERIFICATION.md](docs/FINAL_VERIFICATION.md)
+- Product spec: [spec.md](spec.md)
+
 **Research prototype only. This tool does not diagnose autism and cannot
 determine whether someone is autistic. It must not be used for medical
 decisions.**
@@ -103,3 +163,10 @@ See [docs/DEMO_CHECKLIST.md](docs/DEMO_CHECKLIST.md) and
 matrix. [docs/RELEASE_FREEZE.md](docs/RELEASE_FREEZE.md) is the post-Phase-8
 feature freeze. Stimulus rights:
 [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
+
+## License
+
+Application source is [MIT](LICENSE) (Copyright 2026 Jonathan Shin).
+Vendored MediaPipe assets under `frontend/public/mediapipe/` are Apache-2.0
+(see that directory’s LICENSE and NOTICE). The gitignored stimulus `.mp4`
+is a Pexels-licensed stock clip, not covered by the MIT grant.
