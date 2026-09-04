@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed presenter-only `docs/DEMO_SCRIPT.md` and `docs/DEMO_CHECKLIST.md`
+  from the public tree. The README is for cloning and running the prototype.
+
 - Session screens use a light healthcare “research notebook” layout (cyan
   paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
   and skip paths are unchanged.

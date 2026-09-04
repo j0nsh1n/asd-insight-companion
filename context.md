@@ -34,8 +34,6 @@ verification and the docs/FINAL_VERIFICATION.md manual rows.
     backend/app/models/session.py      SessionResponse.features_recorded
     docs/TESTING.md
     docs/FINAL_VERIFICATION.md
-    docs/DEMO_SCRIPT.md
-    docs/DEMO_CHECKLIST.md
     docs/RELEASE_FREEZE.md
     README.md
 

@@ -8,8 +8,7 @@ Start the app with `./scripts/dev.sh` (backend `127.0.0.1:8000`, frontend
 automated test already proves it. Leave unverified rows as
 `MANUAL VERIFICATION REQUIRED`.
 
-Related automated commands: `docs/TESTING.md`. Demo walkthrough:
-`docs/DEMO_SCRIPT.md`.
+Related automated commands: `docs/TESTING.md`.
 
 ## Status (2026-09-04)
 

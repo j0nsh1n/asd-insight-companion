@@ -2,12 +2,11 @@
 
 Research-only, non-diagnostic ASD-trait prescreen prototype for adults 18+.
 
-## For judges and voters (Hack for Humanity — Summer 2026)
+## What this is
 
 ASD Insight Companion is an anonymous, research-only session prototype
-for adults 18+. It demonstrates how a webcam-based behavioral-research
-session can be built so raw video never leaves the participant's browser —
-and so the product can never overclaim, even by accident.
+for adults 18+. It shows how a webcam-based research session can keep raw
+video in the participant's browser and avoid overclaiming, even by accident.
 
 ### What it is / is not
 
@@ -37,11 +36,9 @@ anonymous session with numeric JSON → research-session summary.
   keyboard-operable controls, text-not-color quality checklists, a
   descriptive transcript matched to the actual (silent, licensed) footage,
   reduced-motion support.
-- **Process:** gated pull requests, a written release freeze with dated
-  amendments, and a licensed stimulus with a documented rights record —
-  see [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
-- **Tests:** vitest + pytest in CI, including a test that the stimulus step
-  never requests microphone audio.
+- **Stimulus rights:** [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
+- **Tests:** `cd frontend && npm test` and `cd backend && pytest -q`. CI
+  also runs a privacy grep so raw-media upload APIs cannot sneak in.
 
 ### Run it locally
 
@@ -55,12 +52,6 @@ secure context the camera needs) · Backend
 in `frontend/` vendors the MediaPipe WASM. The stimulus clip is gitignored —
 place a licensed copy at `frontend/public/stimuli/social-interaction-v1.mp4`
 or the video step shows its honest skip-able notice.
-
-### Submission materials
-
-- Demo walkthrough: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)
-- Verification matrix: [docs/FINAL_VERIFICATION.md](docs/FINAL_VERIFICATION.md)
-- Product spec: [spec.md](spec.md)
 
 **Research prototype only. This tool does not diagnose autism and cannot
 determine whether someone is autistic. It must not be used for medical
@@ -119,10 +110,7 @@ load.
 Backend: `http://127.0.0.1:8000`  
 Frontend: `http://127.0.0.1:5173`
 
-See [docs/TESTING.md](docs/TESTING.md) for test commands and a manual
-end-to-end matrix.
-
-### Before a demo or a real session
+### Before a real session
 
 Place an approved attention clip at
 `frontend/public/stimuli/social-interaction-v1.mp4`. The file is gitignored
@@ -157,11 +145,7 @@ skeleton; `./scripts/dev.sh` is the usual path.
 | Backend lint / types / tests | `cd backend && ruff check . && ruff format --check . && mypy app && pytest -q` |
 | Frontend lint / tests / build | `cd frontend && npm run lint && npm test && npm run build` |
 
-See [docs/DEMO_CHECKLIST.md](docs/DEMO_CHECKLIST.md) and
-[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) for judging.
-[docs/FINAL_VERIFICATION.md](docs/FINAL_VERIFICATION.md) is the release
-matrix. [docs/RELEASE_FREEZE.md](docs/RELEASE_FREEZE.md) is the post-Phase-8
-feature freeze. Stimulus rights:
+Stimulus rights for the local clip:
 [docs/STIMULUS_RIGHTS_AND_DESIGN.md](docs/STIMULUS_RIGHTS_AND_DESIGN.md).
 
 ## License
