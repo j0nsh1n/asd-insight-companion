@@ -56,7 +56,7 @@ frontend/public/mediapipe/face_landmarker.task
 # Docker
 *.log
 
-# Local-only notes / agent ops (NOT for hackathon submission)
+# Local-only notes / agent ops
 .local/
 .grok/
 opencode.json

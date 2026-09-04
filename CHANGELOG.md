@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed presenter-only `docs/DEMO_SCRIPT.md` and `docs/DEMO_CHECKLIST.md`
   from the public tree. The README is for cloning and running the prototype.
+- Removed leftover files cloners do not need: unused Vite assets
+  (`frontend/src/assets/*`, `frontend/public/icons.svg`), the Phase 0
+  smoke wrapper, and agent/process docs (`agents.md`, `context.md`,
+  `roadmap.md`, `docs/FINAL_VERIFICATION.md`, `docs/TESTING.md`,
+  `docs/RELEASE_FREEZE.md`). Stimulus rights, LICENSE, spec, and
+  run/test commands stay.
 
 - Session screens use a light healthcare “research notebook” layout (cyan
   paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
@@ -22,23 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are required only when a clip has dialogue, and a descriptive transcript
   is provided instead. Stimulus status: licensed silent stock clip SELECTED
   and encoded — Pexels id 6585548 by Artem Podrez, 10.4 s, silent, 1280x720,
-  .mp4, gitignored. Clip selection is DONE; remaining manual steps are only
-  playback/controls verification and the docs/FINAL_VERIFICATION.md manual
-  rows.
-- Release freeze amended (2026-09-01, see docs/RELEASE_FREEZE.md): the
-  stimulus replacement with a licensed silent stock clip and the CSS-only
-  session-screen restyle are permitted post-freeze. Every other freeze rule
-  still applies.
+  .mp4, gitignored. Clip selection is DONE; remaining live checks are
+  pause, restart, skip, and keyboard controls on the clip.
+- Release freeze amended (2026-09-01): the stimulus replacement with a
+  licensed silent stock clip and the CSS-only session-screen restyle are
+  permitted post-freeze. Every other freeze rule still applies.
 
-- Release freeze amended again (2026-09-03, see docs/RELEASE_FREEZE.md):
-  Amendment 2 records the Dark mode / Light mode toggle, which went past
-  Amendment 1's CSS-only wording. Appearance only; no research data.
+- Release freeze amended again (2026-09-03): Amendment 2 records the
+  Dark mode / Light mode toggle, which went past Amendment 1's CSS-only
+  wording. Appearance only; no research data.
 
-- Verification matrix updated (docs/FINAL_VERIFICATION.md): 14 of 22 rows
-  now record Pass against a named automated test, and 8 stay
-  `MANUAL VERIFICATION REQUIRED`. Rows 5 and 11 moved from an implied-
-  coverage note to an explicit gap: the NotFound / NotReadable camera
-  branches and the results Retry / stale-summary behaviour have no test.
+- Verification matrix: 14 of 22 rows record Pass against a named
+  automated test; live camera, keyboard, viewport, and clip-control
+  checks stay a human run. The NotFound / NotReadable camera branches
+  and the results Retry / stale-summary behaviour have no test.
 
 ### Added
 

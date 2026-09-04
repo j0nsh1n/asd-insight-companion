@@ -13,8 +13,7 @@ stating whether someone is autistic.
 
 ## Intended Users
 
-- Hackathon judges and the development team, running locally
-  (`127.0.0.1`) as a demo.
+- Anyone cloning the repo and running it locally (`127.0.0.1`).
 - Hypothetical research participants: adults 18+ only. Not clinicians, not
   minors, not a public diagnostic service.
 
@@ -149,13 +148,11 @@ HTTP (all under `/api/v1`):
 - CI: `.github/workflows/ci.yml` (backend, frontend, privacy grep,
   markdown) on PRs and pushes to `main` and `feat/**`. CodeQL is separate
   (`.github/workflows/codeql.yml`).
-- No Playwright. `docs/FINAL_VERIFICATION.md` rows stay
-  `MANUAL VERIFICATION REQUIRED` until a human runs them. Do not invent
-  Pass.
-- Post-Phase-8 freeze (`docs/RELEASE_FREEZE.md`) plus Amendment 1
-  (licensed silent stock clip + CSS restyle) and Amendment 2 (the
-  appearance-only dark/light toggle). No new scoring, risk, probability,
-  or media-upload APIs.
+- No Playwright. Live camera, keyboard, and viewport checks are not
+  covered by unit tests. Do not treat those tests as a live session Pass.
+- Feature freeze: no new scoring, risk, probability, or media-upload
+  APIs. The licensed silent stock clip, CSS restyle, and appearance-only
+  dark/light toggle are already in. No new integrations.
 
 ## Acceptance Criteria
 
@@ -171,5 +168,5 @@ HTTP (all under `/api/v1`):
 - [ ] Back is previous step; welcome only from Consent (or Start over).
 - [ ] All validation commands above exit 0.
 - [ ] CHANGELOG.md updated for user-visible changes.
-- [ ] Human still owns live Pass/Fail on
-      `docs/FINAL_VERIFICATION.md` (do not tick from unit tests alone).
+- [ ] Live camera, keyboard, and viewport checks stay a human run;
+      unit tests do not tick them.
