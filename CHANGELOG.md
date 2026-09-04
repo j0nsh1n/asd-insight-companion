@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Amendment 2 records the Dark mode / Light mode toggle, which went past
   Amendment 1's CSS-only wording. Appearance only; no research data.
 
+- Verification matrix updated (docs/FINAL_VERIFICATION.md): 14 of 22 rows
+  now record Pass against a named automated test, and 8 stay
+  `MANUAL VERIFICATION REQUIRED`. Rows 5 and 11 moved from an implied-
+  coverage note to an explicit gap: the NotFound / NotReadable camera
+  branches and the results Retry / stale-summary behaviour have no test.
+
 ### Added
 
 - MIT license for application source (`LICENSE`).
