@@ -49,7 +49,7 @@ Explicit confirmations:
       autism-assessment stimulus
 - [x] No real participant video is used anywhere in the demo
 - [x] Transcript reviewed against the final encoded clip
-- [ ] Pause, restart, skip, and keyboard controls tested live
+- [x] Pause, restart, skip, and keyboard controls tested live
 
 ## Design constraints (do not weaken)
 

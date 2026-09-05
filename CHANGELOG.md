@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `roadmap.md`, `docs/FINAL_VERIFICATION.md`, `docs/TESTING.md`,
   `docs/RELEASE_FREEZE.md`). Stimulus rights, LICENSE, spec, and
   run/test commands stay.
+- Live clip-control check completed: pause, restart, skip, and keyboard
+  controls. The last confirmation in
+  `docs/STIMULUS_RIGHTS_AND_DESIGN.md` is ticked.
 
 - Session screens use a light healthcare “research notebook” layout (cyan
   paper, teal actions, amber non-diagnostic banner). Safety copy, consent,
@@ -28,8 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are required only when a clip has dialogue, and a descriptive transcript
   is provided instead. Stimulus status: licensed silent stock clip SELECTED
   and encoded — Pexels id 6585548 by Artem Podrez, 10.4 s, silent, 1280x720,
-  .mp4, gitignored. Clip selection is DONE; remaining live checks are
-  pause, restart, skip, and keyboard controls on the clip.
+  .mp4, gitignored. Clip selection is DONE; pause, restart, skip, and
+  keyboard controls were checked live.
 - Release freeze amended (2026-09-01): the stimulus replacement with a
   licensed silent stock clip and the CSS-only session-screen restyle are
   permitted post-freeze. Every other freeze rule still applies.
